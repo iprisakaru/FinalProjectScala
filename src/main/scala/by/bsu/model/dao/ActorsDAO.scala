@@ -1,15 +1,17 @@
 package by.bsu.model.dao
 
-import by.bsu.model.{Actor, AddressTable, Db}
+import by.bsu.model.Db
+import by.bsu.model.repository.{Actor, ActorsTable}
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Future
 
 class ActorsDAO(val config: DatabaseConfig[JdbcProfile])
-  extends Db with AddressTable {
+  extends Db with ActorsTable {
 
   import config.driver.api._
+
   import scala.concurrent.ExecutionContext.Implicits.global
 
   def insert(actor: Actor): Future[Actor] = {

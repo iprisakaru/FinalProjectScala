@@ -13,3 +13,6 @@ As part of this project, it is necessary to develop a backend for the service of
 - Flyway
 - Postman
 - Docker
+
+
+#### Database schema is in `movie_service_schema_v1.backup`
