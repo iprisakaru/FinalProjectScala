@@ -9,7 +9,7 @@ trait GenresFilmsTable extends GenresTable with FilmsTable {
 
   import config.driver.api._
 
-  class GenresFilms(tag: Tag) extends Table[GenreFilm](tag, "genres_in_films") {
+  class GenresFilms(tag: Tag) extends Table[GenreFilm](tag, "genres_films") {
 
     def genre_film_id = column[Option[Long]]("genre_film_id", O.PrimaryKey, O.AutoInc)
 

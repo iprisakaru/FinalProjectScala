@@ -9,7 +9,7 @@ trait DirectorsFilmsTable extends DirectorsTable with FilmsTable {
 
   import config.driver.api._
 
-  class DirectorsFilms(tag: Tag) extends Table[DirectorFilm](tag, "directors_in_films") {
+  class DirectorsFilms(tag: Tag) extends Table[DirectorFilm](tag, "directors_films") {
 
     def director_film_id = column[Option[Long]]("director_film_id", O.PrimaryKey, O.AutoInc)
 

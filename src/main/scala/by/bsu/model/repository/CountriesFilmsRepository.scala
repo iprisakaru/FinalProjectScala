@@ -9,7 +9,7 @@ trait CountriesFilmsTable extends CountriesTable with FilmsTable {
 
   import config.driver.api._
 
-  class CountriesFilms(tag: Tag) extends Table[CountryFilm](tag, "countries_in_films") {
+  class CountriesFilms(tag: Tag) extends Table[CountryFilm](tag, "countries_films") {
     def country_film_id = column[Option[Long]]("country_film_id", O.PrimaryKey, O.AutoInc)
 
     def country_id = column[Int]("country_id", O.PrimaryKey)

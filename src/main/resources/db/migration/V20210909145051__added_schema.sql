@@ -5,7 +5,7 @@
 -- Dumped from database version 13.3
 -- Dumped by pg_dump version 13.3
 
--- Started on 2021-09-09 14:49:37
+-- Started on 2021-09-09 15:08:02
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -51,7 +51,7 @@ ALTER TABLE public.actors ALTER COLUMN actor_id ADD GENERATED ALWAYS AS IDENTITY
 
 
 --
--- TOC entry 220 (class 1259 OID 17314)
+-- TOC entry 217 (class 1259 OID 17314)
 -- Name: actors_films; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -65,7 +65,7 @@ CREATE TABLE public.actors_films (
 ALTER TABLE public.actors_films OWNER TO postgres;
 
 --
--- TOC entry 219 (class 1259 OID 17312)
+-- TOC entry 216 (class 1259 OID 17312)
 -- Name: actors_films_actor_film_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -136,17 +136,18 @@ ALTER TABLE public.countries ALTER COLUMN country_id ADD GENERATED ALWAYS AS IDE
 
 
 --
--- TOC entry 217 (class 1259 OID 17271)
--- Name: countries_in_films; Type: TABLE; Schema: public; Owner: postgres
+-- TOC entry 219 (class 1259 OID 17364)
+-- Name: countries_films; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.countries_in_films (
-                                           country_id integer NOT NULL,
-                                           film_id bigint NOT NULL
+CREATE TABLE public.countries_films (
+                                        country_film_id bigint NOT NULL,
+                                        country_id integer NOT NULL,
+                                        film_id bigint NOT NULL
 );
 
 
-ALTER TABLE public.countries_in_films OWNER TO postgres;
+ALTER TABLE public.countries_films OWNER TO postgres;
 
 --
 -- TOC entry 211 (class 1259 OID 17214)
@@ -177,17 +178,18 @@ ALTER TABLE public.directors ALTER COLUMN director_id ADD GENERATED ALWAYS AS ID
 
 
 --
--- TOC entry 218 (class 1259 OID 17286)
--- Name: directors_in_films; Type: TABLE; Schema: public; Owner: postgres
+-- TOC entry 218 (class 1259 OID 17348)
+-- Name: directors_films; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.directors_in_films (
-                                           director_id integer NOT NULL,
-                                           film_id bigint NOT NULL
+CREATE TABLE public.directors_films (
+                                        director_film_id bigint NOT NULL,
+                                        director_id integer NOT NULL,
+                                        film_id bigint NOT NULL
 );
 
 
-ALTER TABLE public.directors_in_films OWNER TO postgres;
+ALTER TABLE public.directors_films OWNER TO postgres;
 
 --
 -- TOC entry 215 (class 1259 OID 17228)
@@ -238,6 +240,20 @@ CREATE TABLE public.genres (
 ALTER TABLE public.genres OWNER TO postgres;
 
 --
+-- TOC entry 220 (class 1259 OID 17379)
+-- Name: genres_films; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.genres_films (
+                                     genre_film_id bigint NOT NULL,
+                                     genre_id integer NOT NULL,
+                                     film_id bigint NOT NULL
+);
+
+
+ALTER TABLE public.genres_films OWNER TO postgres;
+
+--
 -- TOC entry 206 (class 1259 OID 17188)
 -- Name: genres_genre_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
@@ -251,19 +267,6 @@ ALTER TABLE public.genres ALTER COLUMN genre_id ADD GENERATED ALWAYS AS IDENTITY
     CACHE 1
 );
 
-
---
--- TOC entry 216 (class 1259 OID 17241)
--- Name: genres_in_films; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.genres_in_films (
-                                        genre_id integer NOT NULL,
-                                        film_id bigint NOT NULL
-);
-
-
-ALTER TABLE public.genres_in_films OWNER TO postgres;
 
 --
 -- TOC entry 213 (class 1259 OID 17221)
@@ -322,7 +325,7 @@ ALTER TABLE public.users ALTER COLUMN user_id ADD GENERATED ALWAYS AS IDENTITY (
 
 
 --
--- TOC entry 2934 (class 2606 OID 17318)
+-- TOC entry 2928 (class 2606 OID 17318)
 -- Name: actors_films actors_films_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -349,12 +352,12 @@ ALTER TABLE ONLY public.admins
 
 
 --
--- TOC entry 2930 (class 2606 OID 17275)
--- Name: countries_in_films countries_in_films_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- TOC entry 2932 (class 2606 OID 17368)
+-- Name: countries_films countries_films_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.countries_in_films
-    ADD CONSTRAINT countries_in_films_pkey PRIMARY KEY (film_id, country_id);
+ALTER TABLE ONLY public.countries_films
+    ADD CONSTRAINT countries_films_pkey PRIMARY KEY (country_film_id);
 
 
 --
@@ -367,12 +370,12 @@ ALTER TABLE ONLY public.countries
 
 
 --
--- TOC entry 2932 (class 2606 OID 17290)
--- Name: directors_in_films directors_in_films_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- TOC entry 2930 (class 2606 OID 17352)
+-- Name: directors_films directors_films_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.directors_in_films
-    ADD CONSTRAINT directors_in_films_pkey PRIMARY KEY (director_id, film_id);
+ALTER TABLE ONLY public.directors_films
+    ADD CONSTRAINT directors_films_pkey PRIMARY KEY (film_id);
 
 
 --
@@ -394,12 +397,12 @@ ALTER TABLE ONLY public.films
 
 
 --
--- TOC entry 2928 (class 2606 OID 17302)
--- Name: genres_in_films genres_in_films_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- TOC entry 2934 (class 2606 OID 17383)
+-- Name: genres_films genres_films_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.genres_in_films
-    ADD CONSTRAINT genres_in_films_pkey PRIMARY KEY (genre_id, film_id);
+ALTER TABLE ONLY public.genres_films
+    ADD CONSTRAINT genres_films_pkey PRIMARY KEY (genre_film_id);
 
 
 --
@@ -430,6 +433,24 @@ ALTER TABLE ONLY public.users
 
 
 --
+-- TOC entry 2940 (class 2606 OID 17369)
+-- Name: countries_films country_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.countries_films
+    ADD CONSTRAINT country_id FOREIGN KEY (country_id) REFERENCES public.countries(country_id);
+
+
+--
+-- TOC entry 2941 (class 2606 OID 17374)
+-- Name: countries_films film_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.countries_films
+    ADD CONSTRAINT film_id FOREIGN KEY (film_id) REFERENCES public.films(film_id);
+
+
+--
 -- TOC entry 2935 (class 2606 OID 17329)
 -- Name: films fk2_languageId; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
@@ -439,7 +460,7 @@ ALTER TABLE ONLY public.films
 
 
 --
--- TOC entry 2942 (class 2606 OID 17319)
+-- TOC entry 2936 (class 2606 OID 17319)
 -- Name: actors_films fk_actor_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -448,52 +469,16 @@ ALTER TABLE ONLY public.actors_films
 
 
 --
--- TOC entry 2938 (class 2606 OID 17276)
--- Name: countries_in_films fk_counrty_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- TOC entry 2938 (class 2606 OID 17353)
+-- Name: directors_films fk_director_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.countries_in_films
-    ADD CONSTRAINT fk_counrty_id FOREIGN KEY (country_id) REFERENCES public.countries(country_id);
-
-
---
--- TOC entry 2940 (class 2606 OID 17291)
--- Name: directors_in_films fk_director_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.directors_in_films
+ALTER TABLE ONLY public.directors_films
     ADD CONSTRAINT fk_director_id FOREIGN KEY (director_id) REFERENCES public.directors(director_id);
 
 
 --
--- TOC entry 2939 (class 2606 OID 17281)
--- Name: countries_in_films fk_film_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.countries_in_films
-    ADD CONSTRAINT fk_film_id FOREIGN KEY (film_id) REFERENCES public.films(film_id);
-
-
---
--- TOC entry 2941 (class 2606 OID 17296)
--- Name: directors_in_films fk_film_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.directors_in_films
-    ADD CONSTRAINT fk_film_id FOREIGN KEY (film_id) REFERENCES public.films(film_id);
-
-
---
--- TOC entry 2936 (class 2606 OID 17303)
--- Name: genres_in_films fk_film_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.genres_in_films
-    ADD CONSTRAINT fk_film_id FOREIGN KEY (film_id) REFERENCES public.films(film_id);
-
-
---
--- TOC entry 2943 (class 2606 OID 17324)
+-- TOC entry 2937 (class 2606 OID 17324)
 -- Name: actors_films fk_film_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -502,12 +487,30 @@ ALTER TABLE ONLY public.actors_films
 
 
 --
--- TOC entry 2937 (class 2606 OID 17246)
--- Name: genres_in_films fk_genre_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- TOC entry 2939 (class 2606 OID 17358)
+-- Name: directors_films fk_film_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.genres_in_films
+ALTER TABLE ONLY public.directors_films
+    ADD CONSTRAINT fk_film_id FOREIGN KEY (film_id) REFERENCES public.films(film_id);
+
+
+--
+-- TOC entry 2943 (class 2606 OID 17389)
+-- Name: genres_films fk_film_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.genres_films
+    ADD CONSTRAINT fk_film_id FOREIGN KEY (film_id) REFERENCES public.films(film_id);
+
+
+--
+-- TOC entry 2942 (class 2606 OID 17384)
+-- Name: genres_films fk_genre_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.genres_films
     ADD CONSTRAINT fk_genre_id FOREIGN KEY (genre_id) REFERENCES public.genres(genre_id);
 
 
--- Completed on 2021-09-09 14:49:37
+-- Completed on 2021-09-09 15:08:02
