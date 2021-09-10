@@ -19,7 +19,7 @@ trait ActorsFilmsTable extends ActorsTable with FilmsTable {
 
     def fk_actor_id = foreignKey("fk_actor_id", actor_id, actors)(_.actor_id)
 
-    def fk_film_id = foreignKey("fk_film_id", film_id, films)(_.film_id)
+    def fk_film_id = foreignKey("fk_film_id", film_id, films)(_.filmId)
 
     def * = (actor_film_id, actor_id, film_id) <> (ActorFilm.tupled, ActorFilm.unapply)
   }
