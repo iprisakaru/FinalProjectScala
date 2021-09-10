@@ -2,13 +2,14 @@ package by.bsu.model.dao
 
 import by.bsu.model.repository.{Actor, ActorsTable, Language, LanguagesTable}
 import by.bsu.model.Db
+import by.bsu.utils.HelpFunctions
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Future
 
 class LanguagesDAO(val config: DatabaseConfig[JdbcProfile])
-  extends Db with LanguagesTable {
+  extends Db with LanguagesTable with HelpFunctions {
 
   import config.driver.api._
   import scala.concurrent.ExecutionContext.Implicits.global
@@ -32,7 +33,7 @@ class LanguagesDAO(val config: DatabaseConfig[JdbcProfile])
     }
   }
 
-  def findById(id: Int): Future[Option[Actor]] = {
+  def findById(id: Int): Future[Option[Language]] = {
     db.run(languages.filter(_.language_id === id).result.headOption)
   }
 
@@ -40,15 +41,18 @@ class LanguagesDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(languages.filter(_.name === name).result.headOption)
   }
 
-  def insertUniq(language: Language): Future[Either[String, Future[Option[Int]]]] = {
+  def insertUniq(language: Language): Future[Either[String, Option[Int]]] = {
+
     db.run(languages.filter(_.name === language.name).result).map(_.nonEmpty).map(isNotUniq => {
       if (isNotUniq) Left(new Exception + s" ${language.name} is already exist in database.")
       else Right(insert(language).map(_.id))
-    })
+    }).map(data => foldEitherOfFuture(data)).flatten
 
   }
 
   def deleteAll(): Future[Int] = {
     db.run(languages.delete)
   }
+
+
 }

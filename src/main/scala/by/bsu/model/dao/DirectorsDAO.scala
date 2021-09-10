@@ -2,13 +2,14 @@ package by.bsu.model.dao
 
 import by.bsu.model.repository.{Director, DirectorsTable}
 import by.bsu.model.Db
+import by.bsu.utils.HelpFunctions
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Future
 
 class DirectorsDAO(val config: DatabaseConfig[JdbcProfile])
-  extends Db with DirectorsTable {
+  extends Db with DirectorsTable with HelpFunctions {
 
   import config.driver.api._
 
@@ -41,11 +42,11 @@ class DirectorsDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(directors.filter(_.name === name).result.headOption)
   }
 
-  def insertUniq(director: Director): Future[Either[String, Future[Director]]] = {
+  def insertUniq(director: Director): Future[Either[String, Director]] = {
     db.run(directors.filter(_.name === director.name).result).map(_.nonEmpty).map(isNotUniq => {
       if (isNotUniq) Left(new Exception + s" ${director.name} is already exist in database.")
       else Right(insert(director))
-    })
+    }).map(data => foldEitherOfFuture(data)).flatten
 
   }
 

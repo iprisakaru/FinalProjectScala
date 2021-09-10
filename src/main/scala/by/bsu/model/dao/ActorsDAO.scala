@@ -2,13 +2,14 @@ package by.bsu.model.dao
 
 import by.bsu.model.Db
 import by.bsu.model.repository.{Actor, ActorsTable}
+import by.bsu.utils.HelpFunctions
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Future
 
 class ActorsDAO(val config: DatabaseConfig[JdbcProfile])
-  extends Db with ActorsTable {
+  extends Db with ActorsTable with HelpFunctions {
 
   import config.driver.api._
 
@@ -41,11 +42,11 @@ class ActorsDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(actors.filter(_.name === name).result.headOption)
   }
 
-  def insertUniq(actor: Actor): Future[Either[String, Future[Actor]]] = {
+  def insertUniq(actor: Actor): Future[Either[String, Actor]] = {
     db.run(actors.filter(_.name === actor.name).result).map(_.nonEmpty).map(isNotUniq => {
       if (isNotUniq) Left(new Exception + s" ${actor.name} is already exist in database.")
       else Right(insert(actor))
-    })
+    }).map(data => foldEitherOfFuture(data)).flatten
 
   }
 

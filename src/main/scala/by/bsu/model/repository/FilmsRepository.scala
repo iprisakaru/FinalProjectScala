@@ -2,8 +2,12 @@ package by.bsu.model.repository
 
 import by.bsu.model.Db
 
-case class Film(id: Option[Long], name: String, age_limit: String, short_description: String, timing: String, image: String, release_date: String, awards: String, language_id: Int)
-case class NewFilm( name: String, age_limit: String, short_description: String, timing: String, image: String, release_date: String, awards: String, language_name: String)
+case class Film(id: Option[Long], name: String, age_limit: Option[String], short_description: String, timing: Option[String], image: Option[String], release_date: String, awards: Option[String], language_id: Option[Int], isPublic: Boolean)
+
+case class NewFilm( name: String, age_limit: String, actors: Seq[String], genres: Seq[String], countries: Seq[String], directors: Seq[String], short_description: String, timing: String, image: String, release_date: String, awards: String, language_name: String)
+
+case class NewFilmWithoutId(id: Option[Long], name: String, age_limit: String, short_description: String, timing: String, image: String, release_date: String, awards: String, language_id: String)
+
 
 trait FilmsTable extends LanguagesTable {
   this: Db =>
@@ -29,9 +33,11 @@ trait FilmsTable extends LanguagesTable {
 
     def language_id = column[Int]("language_id")
 
+    def isPublic = column[Boolean]("is_public")
+
     def fk_language_id = foreignKey("fk_language_id", language_id, languages)(_.language_id)
 
-    def * = (film_id.?, name, age_limit, short_description, timing, image, release_date, awards, language_id) <> (Film.tupled, Film.unapply)
+    def * = (film_id.?, name, age_limit.?, short_description, timing.?, image.?, release_date, awards.?, language_id.?, isPublic) <> (Film.tupled, Film.unapply)
   }
 
   val films = TableQuery[Films]

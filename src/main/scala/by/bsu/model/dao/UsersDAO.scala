@@ -2,13 +2,14 @@ package by.bsu.model.dao
 
 import by.bsu.model.Db
 import by.bsu.model.repository.{User, UsersTable}
+import by.bsu.utils.HelpFunctions
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Future
 
 class UsersDAO(val config: DatabaseConfig[JdbcProfile])
-  extends Db with UsersTable {
+  extends Db with UsersTable with HelpFunctions {
 
   import config.driver.api._
 
@@ -41,11 +42,11 @@ class UsersDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(users.filter(_.code === name).result.headOption)
   }
 
-  def insertUniq(user: User): Future[Either[String, Future[Option[Int]]]] = {
+  def insertUniq(user: User): Future[Either[String, User]] = {
     db.run(users.filter(_.code === user.code).result).map(_.nonEmpty).map(isNotUniq => {
       if (isNotUniq) Left(new Exception + s" ${user.code} is already exist in database.")
-      else Right(insert(user).map(_.id))
-    })
+      else Right(insert(user))
+    }).map(data => foldEitherOfFuture(data)).flatten
 
   }
 

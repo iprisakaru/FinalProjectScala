@@ -16,25 +16,12 @@ class CountriesFilmsDAO(val config: DatabaseConfig[JdbcProfile])
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  def insert(countryFilm: CountryFilm): Future[CountryFilm] = {
+  def insert(countryFilm: CountryFilm): Future[Long] = {
     db.run((countriesFilms returning countriesFilms.map(_.country_film_id) += countryFilm))
-      .map(id => countryFilm.copy(id))
+      .map(id => countryFilm.copy(id)).map(_.countryFilmId.get)
   }
 
-  def insertIfUniq(countryName: String, filmName: String, releaseDate: String): Either[String, Future[CountryFilm]] = {
 
-    val tryingToInsert = Try(db.run(countries.joinFull(films).joinFull(countriesFilms).result.map(data => {
-      (data.map(_._1.get._1).filter(data => data.get.name == countryName).head.get.id.get,
-        data.map(_._1.get._2).filter(data => ((data.get.name == filmName) && (data.get.release_date == releaseDate))).head.get.id.get
-      )
-    }))).map(_.map(data => insert(CountryFilm(None, data._1, data._2))).flatten)
-
-    if (tryingToInsert.isSuccess) Right(tryingToInsert.toOption.get)
-    else {
-      Left(new Exception + s"Foreign keys for trip of user $countryName are impossible to find")
-    }
-
-  }
 
   def deleteById(countryId: Int, filmId: Long): Future[Boolean] = {
     db.run(countriesFilms.filter(data => (data.country_id === countryId) && (data.film_id === filmId)).delete) map {

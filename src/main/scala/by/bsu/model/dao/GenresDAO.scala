@@ -2,13 +2,14 @@ package by.bsu.model.dao
 
 import by.bsu.model.Db
 import by.bsu.model.repository.{Genre, GenresTable}
+import by.bsu.utils.HelpFunctions
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Future
 
 class GenresDAO(val config: DatabaseConfig[JdbcProfile])
-  extends Db with GenresTable {
+  extends Db with GenresTable with HelpFunctions {
 
   import config.driver.api._
 
@@ -41,11 +42,11 @@ class GenresDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(genres.filter(_.name === name).result.headOption)
   }
 
-  def insertUniq(genre: Genre): Future[Either[String, Future[Genre]]] = {
+  def insertUniq(genre: Genre): Future[Either[String, Genre]] = {
     db.run(genres.filter(_.name === genre.name).result).map(_.nonEmpty).map(isNotUniq => {
       if (isNotUniq) Left(new Exception + s" ${genre.name} is already exist in database.")
       else Right(insert(genre))
-    })
+    }).map(data => foldEitherOfFuture(data)).flatten
 
   }
 

@@ -1,7 +1,8 @@
 package by.bsu.model.dao
 
 import by.bsu.model.Db
-import by.bsu.model.repository.{Film, FilmsTable, NewFilm}
+import by.bsu.model.repository.{Film, FilmsTable, Language, NewFilm, NewFilmWithoutId}
+import by.bsu.utils.HelpFunctions
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
@@ -10,7 +11,7 @@ import scala.language.postfixOps
 import scala.util.Try
 
 class FilmsDAO(val config: DatabaseConfig[JdbcProfile])
-  extends Db with FilmsTable {
+  extends Db with FilmsTable with HelpFunctions {
 
   import config.driver.api._
 
@@ -21,12 +22,12 @@ class FilmsDAO(val config: DatabaseConfig[JdbcProfile])
       .map(id => film.copy(id = Option(id)))
   }
 
-  def update(id: Long, film: Film): Future[Int] = {
-    db.run(films.filter(_.film_id === id).map(customer => (customer.name, customer.age_limit, customer.short_description, customer.timing, customer.image, customer.release_date, customer.awards, customer.language_id))
-      .update((film.name, film.age_limit, film.short_description, film.timing, film.image, film.release_date, film.awards, film.language_id)))
+  def update(id: Long, film: Film, visible: Boolean ): Future[Int] = {
+    db.run(films.filter(_.film_id === id).map(customer => (customer.name, customer.age_limit.?, customer.short_description, customer.timing.?, customer.image.?, customer.release_date, customer.awards.?, customer.language_id.?, visible))
+      .update((film.name, film.age_limit, film.short_description, film.timing, film.image, film.release_date, film.awards, film.language_id, visible)))
   }
 
-  def findAll(): Future[Seq[Film]] = db.run(films.result)
+  def findAll(): Future[Seq[Film]] = db.run(films.filter(_.isPublic === true).result)
 
   def deleteById(id: Long): Future[Boolean] = {
     db.run(films.filter(_.film_id === id).delete) map {
@@ -42,15 +43,17 @@ class FilmsDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(films.filter(_.name === name).result.headOption)
   }
 
-  def insertUniq(newFilm: NewFilm) = {
-    val tryingToInsert = Try(db.run(languages.result.map(data =>
-      (data.find(language => language.name == newFilm.language_name).head.id.get))
-      .map(data => insert(Film(None, newFilm.name, newFilm.age_limit, newFilm.short_description, newFilm.timing, newFilm.image, newFilm.release_date, newFilm.awards, data)))).flatten)
+  def insertUniqFilmAndLanguages(newFilm: NewFilm): Future[Either[Throwable, Film]] = {
 
-    if (tryingToInsert.isSuccess) Right(tryingToInsert.toOption.get)
-    else {
-      Left(new Exception + s"Foreign keys for trip of user ${newFilm.name} are impossible to find")
-    }
+    val languagesDAO = new LanguagesDAO(config)
+
+    val languageInsertion = languagesDAO.insertUniq(Language(None, newFilm.language_name))
+
+    val tryingToInsert = Try(languageInsertion.map(_.map(languageId =>insert(Film(None, newFilm.name, Option(newFilm.age_limit), newFilm.short_description, Option(newFilm.timing), Option(newFilm.image), newFilm.release_date, Option(newFilm.awards), Option(languageId.get), false))))
+     .map(data=> foldEitherOfFuture(data)).flatten.map(_.toOption.get))
+
+     foldEitherOfFuture(tryingToInsert.toEither)
+
 
   }
 
