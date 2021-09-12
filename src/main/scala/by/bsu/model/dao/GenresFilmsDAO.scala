@@ -1,7 +1,7 @@
 package by.bsu.model.dao
 
 import by.bsu.model.Db
-import by.bsu.model.repository.{FilmsTable, GenreFilm, GenresFilmsTable, GenresTable}
+import by.bsu.model.repository.{FilmsTable, Genre, GenreFilm, GenresFilmsTable, GenresTable}
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
@@ -30,4 +30,15 @@ class GenresFilmsDAO(val config: DatabaseConfig[JdbcProfile])
   def deleteAll(): Future[Int] = {
     db.run(genresFilms.delete)
   }
+
+  def findByName(genreId: Int, filmId: Long): Future[Option[Long]] = {
+    db.run(genresFilms.filter(data=>(data.genre_id === genreId && data.film_id===filmId)).result.headOption.map(_.get.genreFilmId))
+  }
+
+  def insertUniq(genre: GenreFilm): Future[Long] = {
+    db.run(genresFilms.filter(data=>(data.genre_id === genre.genreId && data.film_id===genre.filmId)).result).map(_.nonEmpty).map(isNotUniq => {
+      if (isNotUniq) findByName(genre.genreId, genre.filmId).map(_.get)
+      else insert(genre)}).flatten
+  }
+
 }

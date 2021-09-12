@@ -42,12 +42,10 @@ class DirectorsDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(directors.filter(_.name === name).result.headOption)
   }
 
-  def insertUniq(director: Director): Future[Either[String, Director]] = {
+  def insertUniq(director: Director): Future[Director] = {
     db.run(directors.filter(_.name === director.name).result).map(_.nonEmpty).map(isNotUniq => {
-      if (isNotUniq) Left(new Exception + s" ${director.name} is already exist in database.")
-      else Right(insert(director))
-    }).map(data => foldEitherOfFuture(data)).flatten
-
+      if (isNotUniq) findByName(director.name).map(_.get)
+      else insert(director)}).flatten
   }
 
   def deleteAll(): Future[Int] = {

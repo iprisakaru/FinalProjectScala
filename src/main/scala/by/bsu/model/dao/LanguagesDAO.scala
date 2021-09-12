@@ -41,13 +41,10 @@ class LanguagesDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(languages.filter(_.name === name).result.headOption)
   }
 
-  def insertUniq(language: Language): Future[Either[String, Option[Int]]] = {
-
+  def insertUniq(language: Language): Future[Language] = {
     db.run(languages.filter(_.name === language.name).result).map(_.nonEmpty).map(isNotUniq => {
-      if (isNotUniq) Left(new Exception + s" ${language.name} is already exist in database.")
-      else Right(insert(language).map(_.id))
-    }).map(data => foldEitherOfFuture(data)).flatten
-
+      if (isNotUniq) findByName(language.name).map(_.get)
+      else insert(language)}).flatten
   }
 
   def deleteAll(): Future[Int] = {

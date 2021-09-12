@@ -42,12 +42,10 @@ class ActorsDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(actors.filter(_.name === name).result.headOption)
   }
 
-  def insertUniq(actor: Actor): Future[Either[String, Actor]] = {
+  def insertUniq(actor: Actor): Future[Actor] = {
     db.run(actors.filter(_.name === actor.name).result).map(_.nonEmpty).map(isNotUniq => {
-      if (isNotUniq) Left(new Exception + s" ${actor.name} is already exist in database.")
-      else Right(insert(actor))
-    }).map(data => foldEitherOfFuture(data)).flatten
-
+      if (isNotUniq) findByName(actor.name).map(_.get)
+      else insert(actor)}).flatten
   }
 
   def deleteAll(): Future[Int] = {

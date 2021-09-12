@@ -43,14 +43,13 @@ class FilmsDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(films.filter(_.name === name).result.headOption)
   }
 
-  def insertUniqFilmAndLanguages(newFilm: NewFilm): Future[Either[Throwable, Film]] = {
+  def insertUniqFilmAndLanguages(newFilm: NewFilm) = {
 
     val languagesDAO = new LanguagesDAO(config)
 
     val languageInsertion = Try(languagesDAO.insertUniq(Language(None, newFilm.language_name.get)))
     val result = if (languageInsertion.isSuccess) {
-      Try(languageInsertion.toOption.get.map(_.map(languageId => insert(Film(None, newFilm.name, newFilm.ageLimit, newFilm.shortDescription, newFilm.timing, newFilm.image, newFilm.releaseDate, newFilm.awards, Option(languageId.get), false))))
-        .map(data => foldEitherOfFuture(data)).flatten.map(_.toOption.get)).toEither
+      languageInsertion.map(_.map(languageId => insert(Film(None, newFilm.name, newFilm.ageLimit, newFilm.shortDescription, newFilm.timing, newFilm.image, newFilm.releaseDate, newFilm.awards, Option(languageId.id.get), false))).flatten).toEither
     }
     else {
       Try(insert(Film(None, newFilm.name, newFilm.ageLimit, newFilm.shortDescription, newFilm.timing, newFilm.image, newFilm.releaseDate, newFilm.awards, None, false))).toEither

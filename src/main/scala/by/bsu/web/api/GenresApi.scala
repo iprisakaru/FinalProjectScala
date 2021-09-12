@@ -17,8 +17,8 @@ trait GenreJsonMapping extends DefaultJsonProtocol with FilmService {
 
 trait GenresApi extends FilmService with GenreJsonMapping {
   val genresRoute: Route = {
-    (post) {
-      complete(getGenresFromApi().toJson)
+    post {
+      complete(getGenresFromApi.map(_.toJson))
     }
   }
 }

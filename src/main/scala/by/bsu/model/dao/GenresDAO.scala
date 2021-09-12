@@ -6,7 +6,9 @@ import by.bsu.utils.HelpFunctions
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, Future}
+import scala.language.postfixOps
 
 class GenresDAO(val config: DatabaseConfig[JdbcProfile])
   extends Db with GenresTable with HelpFunctions {
@@ -42,12 +44,10 @@ class GenresDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(genres.filter(_.name === name).result.headOption)
   }
 
-  def insertUniq(genre: Genre): Future[Either[String, Genre]] = {
-    db.run(genres.filter(_.name === genre.name).result).map(_.nonEmpty).map(isNotUniq => {
-      if (isNotUniq) Left(new Exception + s" ${genre.name} is already exist in database.")
-      else Right(insert(genre))
-    }).map(data => foldEitherOfFuture(data)).flatten
-
+  def insertUniq(genre: Genre): Future[Genre] = {
+     db.run(genres.filter(_.name === genre.name).result).map(_.nonEmpty).map(isNotUniq => {
+      if (isNotUniq) findByName(genre.name).map(_.get)
+      else insert(genre)}).flatten
   }
 
   def deleteAll(): Future[Int] = {

@@ -41,12 +41,10 @@ class CountriesDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(countries.filter(_.name === name).result.headOption)
   }
 
-  def insertUniq(country: Country): Future[Either[String, Country]] = {
-    db.run(countries.filter(_.name === country.name).result).map(_.nonEmpty).map(isNotUniq => {
-      if (isNotUniq) Left(new Exception + s" ${country.name} is already exist in database.")
-      else Right(insert(country))
-    }).map(data => foldEitherOfFuture(data)).flatten
-
+  def insertUniq(genre: Country): Future[Country] = {
+    db.run(countries.filter(_.name === genre.name).result).map(_.nonEmpty).map(isNotUniq => {
+      if (isNotUniq) findByName(genre.name).map(_.get)
+      else insert(genre)}).flatten
   }
 
   def deleteAll(): Future[Int] = {

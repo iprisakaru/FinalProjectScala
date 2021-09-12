@@ -9,6 +9,6 @@ case class Settings(config: Config) {
   val httpInterface: String = httpConfig.getString("interface")
   val httpPort: Int = httpConfig.getInt("port")
   val httpApiMovieDb: String = httpConfig.getString("httpApiMovieDb")
-
+  val httpSearchMovieApi: String = httpConfig.getString("httpSearchMovieApi")
   LOGGER.info("Configuration file was read successfully.")
 }

@@ -32,4 +32,14 @@ class CountriesFilmsDAO(val config: DatabaseConfig[JdbcProfile])
   def deleteAll(): Future[Int] = {
     db.run(countriesFilms.delete)
   }
+
+  def findByName(countryId: Int, filmId: Long): Future[Option[Long]] = {
+    db.run(countriesFilms.filter(data=>(data.country_id === countryId && data.film_id===filmId)).result.headOption.map(_.get.countryFilmId))
+  }
+
+  def insertUniq(countryFilm: CountryFilm): Future[Long] = {
+    db.run(countriesFilms.filter(data=>(data.country_id === countryFilm.countryId && data.film_id===countryFilm.filmId)).result).map(_.nonEmpty).map(isNotUniq => {
+      if (isNotUniq) findByName(countryFilm.countryId, countryFilm.filmId).map(_.get)
+      else insert(countryFilm)}).flatten
+  }
 }

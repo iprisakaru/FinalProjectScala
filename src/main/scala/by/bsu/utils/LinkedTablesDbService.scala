@@ -8,7 +8,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Try
 
-trait LinkedTablesService extends Db with HelpFunctions {
+trait LinkedTablesDbService extends Db with HelpFunctions {
 
   val actorsFilmsDAO = new ActorsFilmsDAO(config)
   val countriesFilmsDAO = new CountriesFilmsDAO(config)

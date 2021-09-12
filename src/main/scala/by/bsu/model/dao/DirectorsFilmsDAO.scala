@@ -31,4 +31,14 @@ class DirectorsFilmsDAO(val config: DatabaseConfig[JdbcProfile])
   def deleteAll(): Future[Int] = {
     db.run(directorsFilms.delete)
   }
+
+  def findByName(directorId: Int, filmId: Long): Future[Option[Long]] = {
+    db.run(directorsFilms.filter(data=>(data.director_id === directorId && data.film_id===filmId)).result.headOption.map(_.get.directorFilmId))
+  }
+
+  def insertUniq(directorFilm: DirectorFilm): Future[Long] = {
+    db.run(directorsFilms.filter(data=>(data.director_id === directorFilm.directorId && data.film_id===directorFilm.filmId)).result).map(_.nonEmpty).map(isNotUniq => {
+      if (isNotUniq) findByName(directorFilm.directorId, directorFilm.filmId).map(_.get)
+      else insert(directorFilm)}).flatten
+  }
 }
