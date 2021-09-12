@@ -17,7 +17,6 @@ trait FilmJsonMapping extends DefaultJsonProtocol with FilmService {
 }
 
 trait FilmApi extends FilmJsonMapping with FilmService {
-  val upd = new UpdatingDataController
   val filmRoute: Route = {
     (post) {
       entity(as[NewFilm]) { customer => {
@@ -38,6 +37,4 @@ trait FilmApi extends FilmJsonMapping with FilmService {
     }
 
   }
-
-
 }

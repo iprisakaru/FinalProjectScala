@@ -12,6 +12,8 @@ import scala.util.Try
 
 trait FilmService extends Db with HelpFunctions with LinkedTablesService {
 
+  val upd = new UpdatingDataController
+
   val filmsDAO = new FilmsDAO(config)
   val actorsDAO = new ActorsDAO(config)
   val directorsDAO = new DirectorsDAO(config)
@@ -60,9 +62,12 @@ trait FilmService extends Db with HelpFunctions with LinkedTablesService {
   }
 
   def updateFilmsPerDay(): Future[List[Film]] = {
-    val upd = new UpdatingDataController
     val data = upd.periodicUpdateData()
-    data._1.flatMap(fut => Future.sequence(fut.map(line => filmsDAO.insert(Film(None, line, None, None, None, None, data._2, None, None, false)))))
+    data._1.flatMap(fut => Future.sequence(fut.map(line => filmsDAO.insertUniqFilmAndLanguages(NewFilm( line, None, None, None, None, None, None, None, None, data._2, None, None)).filter(_.isRight).map(_.toOption.get))))
+  }
+
+  def getGenresFromApi() ={
+    val a = upd.getGenresFromApi().flatMap(fut=>Future.sequence(fut.map(tmp=>Future.sequence(tmp.genres.map(genre=>genresDAO.insertUniq(Genre(None, genre.name))).map(tmp=>tmp.filter(_.isRight).map(_.toOption.get)).toList))))
   }
 
 }

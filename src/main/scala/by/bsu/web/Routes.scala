@@ -6,10 +6,12 @@ import by.bsu.web.api._
 
 import scala.language.postfixOps
 
-trait Routes extends FilmApi {
+trait Routes extends FilmApi with GenresApi {
   val routes: Route =
     pathPrefix("film") {
       filmRoute
+    } ~ pathPrefix("genres"){
+      genresRoute
     }
 
 }
