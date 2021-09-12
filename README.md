@@ -14,5 +14,39 @@ As part of this project, it is necessary to develop a backend for the service of
 - Postman
 - Docker
 
+## Requests
 
-#### Database schema is in `movie_service_schema_v1.backup`
+### Getting all films
+```
+curl --location --request POST '127.0.0.1:8000/film/' 
+```
+
+### Creating film 
+```
+curl --location --request POST '127.0.0.1:8000/film/' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "name": "The Godfather",
+    "releaseDate": "1972"
+
+}'
+```
+
+### Creating film with filling fields from another API
+```
+curl --location --request POST '127.0.0.1:8000/film/help/' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "name": "The Godfather",
+    "releaseDate": "1972"
+
+}'
+```
+
+### Getting genres from another API 
+```
+curl --location --request POST '127.0.0.1:8000/genres'
+```
+
+## Database schema 
+![alt text](src/main/resources/db_schema.png)
