@@ -9,4 +9,10 @@ trait HelpFunctions {
       case Left(s) => Future.successful(Left(s))
       case Right(f) => f.map(Right(_))
     }
+
+  def isEnglish(str: String): Boolean ={
+    ((!str.equals(""))
+      && (str != null)
+      && (str.matches("^[a-zA-Z0-9]*$")))
+  }
 }

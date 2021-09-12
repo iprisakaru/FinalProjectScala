@@ -3,6 +3,7 @@ package by.bsu.utils
 import by.bsu.model.Db
 import by.bsu.model.dao._
 import by.bsu.model.repository._
+import by.bsu.web.api.UpdatingDataController
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -33,15 +34,15 @@ trait FilmService extends Db with HelpFunctions with LinkedTablesService {
     (filmsEntitiesTables, actorsInsertion, genresInsertion, countriesInsertion, directorsInsertion, filmsInsertion)
   }
 
-  def getAllFilms: Future[Seq[Film]] ={
+  def getAllFilms: Future[Seq[Film]] = {
     filmsDAO.findAll()
   }
 
-  def getFilmById(id: Long) ={
+  def getFilmById(id: Long) = {
     filmsDAO.findById(id)
   }
 
-  def deleteById(id: Long)={
+  def deleteById(id: Long) = {
     filmsDAO.deleteById(id)
   }
 
@@ -56,6 +57,12 @@ trait FilmService extends Db with HelpFunctions with LinkedTablesService {
       countriesDAO.deleteAll(),
       filmsDAO.deleteAll(),
       languagesDAO.deleteAll()))
+  }
+
+  def updateFilmsPerDay(): Future[List[Film]] = {
+    val upd = new UpdatingDataController
+    val data = upd.periodicUpdateData()
+    data._1.flatMap(fut => Future.sequence(fut.map(line => filmsDAO.insert(Film(None, line, None, None, None, None, data._2, None, None, false)))))
   }
 
 }

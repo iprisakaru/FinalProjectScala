@@ -10,13 +10,6 @@ trait Routes extends FilmApi {
   val routes: Route =
     pathPrefix("film") {
       filmRoute
-    }/* ~ pathPrefix("user") {
-      bikesRoute
-    } ~ pathPrefix("actor") {
-      stationsRoute
-    } ~ pathPrefix("genre") {
-      tripsRoute
-    } ~ pathPrefix("directors") {
-      statsRoute
-    }*/
+    }
+
 }
