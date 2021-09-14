@@ -2,16 +2,26 @@ package by.bsu.model.repository
 
 import by.bsu.model.Db
 
-case class Film(id: Option[Long], name: String, ageLimit: Option[String], shortDescription: Option[String], timing: Option[String], image: Option[String], releaseDate: String, awards: Option[String], languageId: Option[Int], isPublic: Boolean)
+case class Film(id: Option[Long], name: String, ageLimit: Option[String], shortDescription: Option[String],
+                timing: Option[String], image: Option[String], releaseDate: String, awards: Option[String],
+                languageId: Option[Int], isPublic: Boolean)
 
-case class NewFilm(name: String, ageLimit: Option[String], actors: Option[Seq[String]], genres: Option[Seq[String]], countries: Option[Seq[String]], directors: Option[Seq[String]], shortDescription: Option[String], timing: Option[String], image: Option[String], releaseDate: String, awards: Option[String], language_name: Option[String])
+case class NewFilmWithFields(name: String, ageLimit: Option[String], actors: Option[Seq[String]], genres: Option[Seq[String]],
+                             countries: Option[Seq[String]], directors: Option[Seq[String]], shortDescription: Option[String],
+                             timing: Option[String], image: Option[String], releaseDate: String, awards: Option[String],
+                             languageName: Option[String])
 
+case class NewFilmWithId(id: Option[Long], name: String, ageLimit: Option[String], actorsId: Option[Seq[Int]],
+                         genresId: Option[Seq[Int]], countriesId: Option[Seq[Int]], directorsId: Option[Seq[Int]],
+                         shortDescription: Option[String], timing: Option[String], image: Option[String], releaseDate: String,
+                         awards: Option[String], languageId: Option[Int], isPublic: Boolean)
 
 
 trait FilmsTable extends LanguagesTable {
   this: Db =>
 
   import config.driver.api._
+
 
   class Films(tag: Tag) extends Table[Film](tag, "films") {
     def filmId = column[Long]("film_id", O.PrimaryKey, O.AutoInc)

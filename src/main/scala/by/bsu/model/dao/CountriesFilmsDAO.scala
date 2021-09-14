@@ -7,7 +7,6 @@ import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Future
 import scala.language.postfixOps
-import scala.util.Try
 
 class CountriesFilmsDAO(val config: DatabaseConfig[JdbcProfile])
   extends Db with CountriesFilmsTable with CountriesTable with FilmsTable {
@@ -16,11 +15,10 @@ class CountriesFilmsDAO(val config: DatabaseConfig[JdbcProfile])
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  def insert(countryFilm: CountryFilm): Future[Long] = {
+  def insertCountryFilm(countryFilm: CountryFilm): Future[Long] = {
     db.run((countriesFilms returning countriesFilms.map(_.country_film_id) += countryFilm))
       .map(id => countryFilm.copy(id)).map(_.countryFilmId.get)
   }
-
 
 
   def deleteById(countryId: Int, filmId: Long): Future[Boolean] = {
@@ -31,5 +29,34 @@ class CountriesFilmsDAO(val config: DatabaseConfig[JdbcProfile])
 
   def deleteAll(): Future[Int] = {
     db.run(countriesFilms.delete)
+  }
+
+  def findByName(countryId: Int, filmId: Long): Future[Option[Long]] = {
+    db.run(countriesFilms.filter(data => (data.country_id === countryId && data.film_id === filmId)).result.headOption.map(_.get.countryFilmId))
+  }
+
+  def insertUniq(countryFilm: CountryFilm): Future[Long] = {
+    db.run(countriesFilms.filter(data => (data.country_id === countryFilm.countryId && data.film_id === countryFilm.filmId)).result).map(_.nonEmpty).map(isNotUniq => {
+      if (isNotUniq) findByName(countryFilm.countryId, countryFilm.filmId).map(_.get)
+      else insertCountryFilm(countryFilm)
+    }).flatten
+  }
+
+  private def createQuery(entity: CountryFilm): DBIOAction[CountryFilm, NoStream, Effect.Read with Effect.Write with Effect.Transactional] =
+
+    (for {
+      existing <- countriesFilms.filter(e => e.country_id === entity.countryId && e.film_id === entity.filmId).result //Check, if entity exists
+      e <- if (existing.isEmpty)
+        (countriesFilms returning countriesFilms) += entity
+      else {
+        throw new Exception(s"Create failed: entity already exists")
+      }
+    } yield e).transactionally
+
+  def findAll(): Future[Seq[CountryFilm]] = db.run(countriesFilms.result)
+
+
+  def insertListCountryFilm(entities: Seq[CountryFilm])= {
+    db.run(DBIO.sequence(entities.map(createQuery(_))).transactionally.asTry).map(_.toOption)
   }
 }

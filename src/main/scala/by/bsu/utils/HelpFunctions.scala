@@ -1,18 +1,22 @@
 package by.bsu.utils
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext
 
-trait HelpFunctions {
-  def foldEitherOfFuture[A, B](e: Either[A, Future[B]]): Future[Either[A, B]] =
-    e match {
-      case Left(s) => Future.successful(Left(s))
-      case Right(f) => f.map(Right(_))
+object HelpFunctions {
+  import scala.concurrent.Future
+  import scala.concurrent.ExecutionContext
+
+  def fOption[A](x: Option[Future[A]])(implicit ec: ExecutionContext): Future[Option[A]] =
+    x match {
+      case Some(f) => f.map(Some(_))
+      case None    => Future.successful(None)
     }
-
   def isEnglish(str: String): Boolean ={
     ((!str.equals(""))
       && (str != null)
       && (str.matches("^[a-zA-Z0-9]*$")))
   }
+
+
 }

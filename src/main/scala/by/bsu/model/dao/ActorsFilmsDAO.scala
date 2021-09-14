@@ -7,7 +7,6 @@ import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Future
 import scala.language.postfixOps
-import scala.util.Try
 
 class ActorsFilmsDAO(val config: DatabaseConfig[JdbcProfile])
   extends Db with ActorsFilmsTable with ActorsTable with FilmsTable {
@@ -16,11 +15,10 @@ class ActorsFilmsDAO(val config: DatabaseConfig[JdbcProfile])
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  def insert(actorFilm: ActorFilm): Future[Long] = {
+  def insertActorFilm(actorFilm: ActorFilm): Future[ActorFilm] = {
     db.run((actorsFilms returning actorsFilms.map(_.actor_film_id) += actorFilm))
-      .map(id => actorFilm.copy(id)).map(_.actorFilmId.get)
+      .map(id => actorFilm.copy(id))
   }
-
 
 
   def deleteById(actorId: Int, filmId: Long): Future[Boolean] = {
@@ -31,5 +29,29 @@ class ActorsFilmsDAO(val config: DatabaseConfig[JdbcProfile])
 
   def deleteAll(): Future[Int] = {
     db.run(actorsFilms.delete)
+  }
+
+  def findByName(actorId: Int, filmId: Long): Future[Option[Long]] = {
+    db.run(actorsFilms.filter(data => (data.actor_id === actorId && data.film_id === filmId)).result.headOption.map(_.get.actorFilmId))
+  }
+
+  def findAll() = {
+    db.run(actorsFilms.result)
+  }
+
+  private def createQuery(entity: ActorFilm): DBIOAction[ActorFilm, NoStream, Effect.Read with Effect.Write with Effect.Transactional] =
+
+    (for {
+      existing <- actorsFilms.filter(e => e.actor_id === entity.actorId && e.film_id === entity.filmId).result //Check, if entity exists
+      e <- if (existing.isEmpty)
+        (actorsFilms returning actorsFilms) += entity
+      else {
+        throw new Exception(s"Create failed: entity already exists")
+      }
+    } yield e).transactionally
+
+
+  def insertListActorFilm(entities: Seq[ActorFilm]) = {
+    db.run(DBIO.sequence(entities.map(createQuery(_))).transactionally.asTry).map(_.toOption)
   }
 }

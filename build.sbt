@@ -26,7 +26,7 @@ libraryDependencies ++= Seq(
   "io.spray" %%  "spray-json" % "1.3.6",
   "org.slf4j" % "slf4j-simple" % "1.7.32" % Test,
   "log4j" % "log4j" % "1.2.14",
-
+  "org.typelevel" %% "cats-core" % "2.6.1",
   "org.apache.poi" % "poi-ooxml" % "4.1.2",
   "org.apache.poi" % "poi" % "4.1.2",
 

@@ -9,7 +9,7 @@ import slick.jdbc.JdbcProfile
 import scala.concurrent.Future
 
 class UsersDAO(val config: DatabaseConfig[JdbcProfile])
-  extends Db with UsersTable with HelpFunctions {
+  extends Db with UsersTable {
 
   import config.driver.api._
 
@@ -42,13 +42,6 @@ class UsersDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(users.filter(_.code === name).result.headOption)
   }
 
-  def insertUniq(user: User): Future[Either[String, User]] = {
-    db.run(users.filter(_.code === user.code).result).map(_.nonEmpty).map(isNotUniq => {
-      if (isNotUniq) Left(new Exception + s" ${user.code} is already exist in database.")
-      else Right(insert(user))
-    }).map(data => foldEitherOfFuture(data)).flatten
-
-  }
 
   def deleteAll(): Future[Int] = {
     db.run(users.delete)

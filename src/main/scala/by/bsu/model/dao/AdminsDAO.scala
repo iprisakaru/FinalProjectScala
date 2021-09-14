@@ -9,7 +9,7 @@ import slick.jdbc.JdbcProfile
 import scala.concurrent.Future
 
 class AdminsDAO(val config: DatabaseConfig[JdbcProfile])
-  extends Db with AdminsTable with HelpFunctions {
+  extends Db with AdminsTable  {
 
   import config.driver.api._
 
@@ -42,13 +42,7 @@ class AdminsDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(admins.filter(_.code === name).result.headOption)
   }
 
-  def insertUniq(actor: Admin): Future[Either[String, Admin]] = {
-    db.run(admins.filter(_.code === actor.code).result).map(_.nonEmpty).map(isNotUniq => {
-      if (isNotUniq) Left(new Exception + s" ${actor.code} is already exist in database.")
-      else Right(insert(actor))
-    }).map(data => foldEitherOfFuture(data)).flatten
 
-  }
 
   def deleteAll(): Future[Int] = {
     db.run(admins.delete)
