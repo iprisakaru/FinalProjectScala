@@ -2,10 +2,12 @@ package by.bsu.model.dao
 
 import by.bsu.model.Db
 import by.bsu.model.repository.{Actor, ActorsTable}
+import by.bsu.utils.HelpFunctions
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Future
+import scala.util.Try
 
 class ActorsDAO(val config: DatabaseConfig[JdbcProfile])
   extends Db with ActorsTable {
@@ -13,12 +15,6 @@ class ActorsDAO(val config: DatabaseConfig[JdbcProfile])
   import config.driver.api._
 
   import scala.concurrent.ExecutionContext.Implicits.global
-
-  def insert(actor: Actor): Future[Actor] = {
-    db.run(actors returning actors.map(_.actor_id) += actor)
-      .map(id => actor.copy(id = Option(id)))
-  }
-
 
   def update(id: Int, actor: Actor): Future[Int] = {
     db.run(actors.filter(_.actor_id === id).map(customer => (customer.name))
@@ -41,15 +37,27 @@ class ActorsDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(actors.filter(_.name === name).result.headOption)
   }
 
-  def insertUniq(actor: Actor): Future[Either[String, Future[Actor]]] = {
-    db.run(actors.filter(_.name === actor.name).result).map(_.nonEmpty).map(isNotUniq => {
-      if (isNotUniq) Left(new Exception + s" ${actor.name} is already exist in database.")
-      else Right(insert(actor))
-    })
-
+  def insertUniq(actor: Actor): Future[Option[Actor]] = {
+    db.run(createQuery(actor).asTry).map(_.toOption)
   }
 
   def deleteAll(): Future[Int] = {
     db.run(actors.delete)
+  }
+
+  private def createQuery(entity: Actor): DBIOAction[Actor, NoStream, Effect.Read with Effect.Write with Effect.Transactional] =
+
+    (for {
+      existing <- actors.filter(e => e.name === entity.name).result //Check, if entity exists
+      e <- if (existing.isEmpty)
+        (actors returning actors) += entity
+      else {
+        throw new Exception(s"Create failed: entity already exists")
+      }
+    } yield e).transactionally
+
+
+  def insertListActor(entities: Seq[Actor]): Future[Option[Seq[Actor]]] = {
+    db.run(DBIO.sequence(entities.map(createQuery(_))).transactionally.asTry).map(_.toOption)
   }
 }

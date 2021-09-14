@@ -18,7 +18,7 @@ trait CountriesFilmsTable extends CountriesTable with FilmsTable {
 
     def fk_country_id = foreignKey("fk_country_id", country_id, countries)(_.country_id)
 
-    def fk_film_id = foreignKey("fk_film_id", film_id, films)(_.film_id)
+    def fk_film_id = foreignKey("fk_film_id", film_id, films)(_.filmId)
 
     def * = (country_film_id, country_id, film_id) <> (CountryFilm.tupled, CountryFilm.unapply)
   }

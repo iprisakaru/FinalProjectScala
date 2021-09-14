@@ -2,36 +2,51 @@ package by.bsu.model.repository
 
 import by.bsu.model.Db
 
-case class Film(id: Option[Long], name: String, age_limit: String, short_description: String, timing: String, image: String, release_date: String, awards: String, language_id: Int)
-case class NewFilm( name: String, age_limit: String, short_description: String, timing: String, image: String, release_date: String, awards: String, language_name: String)
+case class Film(id: Option[Long], name: String, ageLimit: Option[String], shortDescription: Option[String],
+                timing: Option[String], image: Option[String], releaseDate: String, awards: Option[String],
+                languageId: Option[Int], isPublic: Boolean)
+
+case class NewFilmWithFields(name: String, ageLimit: Option[String], actors: Option[Seq[String]], genres: Option[Seq[String]],
+                             countries: Option[Seq[String]], directors: Option[Seq[String]], shortDescription: Option[String],
+                             timing: Option[String], image: Option[String], releaseDate: String, awards: Option[String],
+                             languageName: Option[String])
+
+case class NewFilmWithId(id: Option[Long], name: String, ageLimit: Option[String], actorsId: Option[Seq[Int]],
+                         genresId: Option[Seq[Int]], countriesId: Option[Seq[Int]], directorsId: Option[Seq[Int]],
+                         shortDescription: Option[String], timing: Option[String], image: Option[String], releaseDate: String,
+                         awards: Option[String], languageId: Option[Int], isPublic: Boolean)
+
 
 trait FilmsTable extends LanguagesTable {
   this: Db =>
 
   import config.driver.api._
 
+
   class Films(tag: Tag) extends Table[Film](tag, "films") {
-    def film_id = column[Long]("film_id", O.PrimaryKey, O.AutoInc)
+    def filmId = column[Long]("film_id", O.PrimaryKey, O.AutoInc)
 
     def name = column[String]("name")
 
-    def age_limit = column[String]("age_limit")
+    def ageLimit = column[Option[String]]("age_limit")
 
-    def short_description = column[String]("short_description")
+    def shortDescription = column[Option[String]]("short_description")
 
-    def timing = column[String]("timing")
+    def timing = column[Option[String]]("timing")
 
-    def image = column[String]("image")
+    def image = column[Option[String]]("image")
 
-    def release_date = column[String]("release_date")
+    def releaseDate = column[String]("release_date")
 
-    def awards = column[String]("awards")
+    def awards = column[Option[String]]("awards")
 
-    def language_id = column[Int]("language_id")
+    def languageId = column[Option[Int]]("language_id")
 
-    def fk_language_id = foreignKey("fk_language_id", language_id, languages)(_.language_id)
+    def public = column[Boolean]("is_public")
 
-    def * = (film_id.?, name, age_limit, short_description, timing, image, release_date, awards, language_id) <> (Film.tupled, Film.unapply)
+    def fk_language_id = foreignKey("fk_language_id", languageId, languages)(_.language_id)
+
+    def * = (filmId.?, name, ageLimit, shortDescription, timing, image, releaseDate, awards, languageId, public) <> (Film.tupled, Film.unapply)
   }
 
   val films = TableQuery[Films]

@@ -19,7 +19,7 @@ trait GenresFilmsTable extends GenresTable with FilmsTable {
 
     def fk_genre_id = foreignKey("fk_genre_id", genre_id, genres)(_.genre_id)
 
-    def fk_film_id = foreignKey("fk_film_id", film_id, films)(_.film_id)
+    def fk_film_id = foreignKey("fk_film_id", film_id, films)(_.filmId)
 
     def * = (genre_film_id, genre_id, film_id) <> (GenreFilm.tupled, GenreFilm.unapply)
   }

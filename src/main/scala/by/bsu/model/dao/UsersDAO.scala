@@ -2,6 +2,7 @@ package by.bsu.model.dao
 
 import by.bsu.model.Db
 import by.bsu.model.repository.{User, UsersTable}
+import by.bsu.utils.HelpFunctions
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
@@ -41,13 +42,6 @@ class UsersDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(users.filter(_.code === name).result.headOption)
   }
 
-  def insertUniq(user: User): Future[Either[String, Future[Option[Int]]]] = {
-    db.run(users.filter(_.code === user.code).result).map(_.nonEmpty).map(isNotUniq => {
-      if (isNotUniq) Left(new Exception + s" ${user.code} is already exist in database.")
-      else Right(insert(user).map(_.id))
-    })
-
-  }
 
   def deleteAll(): Future[Int] = {
     db.run(users.delete)
