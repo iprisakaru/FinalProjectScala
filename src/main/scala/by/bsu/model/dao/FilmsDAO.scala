@@ -6,8 +6,7 @@ import by.bsu.utils.HelpFunctions
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 import scala.language.postfixOps
 
 class FilmsDAO(override val config: DatabaseConfig[JdbcProfile])
@@ -24,20 +23,28 @@ class FilmsDAO(override val config: DatabaseConfig[JdbcProfile])
 
   def insertFilm(film: NewFilmWithId): Future[NewFilmWithId] = {
 
-   val result = db.run(films returning films.map(_.filmId) += Film(film.id, film.name, film.ageLimit, film.shortDescription, film.timing, film.image,
+    val result = db.run(films returning films.map(_.filmId) += Film(film.id, film.name, film.ageLimit, film.shortDescription, film.timing, film.image,
       film.releaseDate, film.awards, film.languageId, false))
       .map(id => film.copy(id = Option(id)))
-    val s =result.flatMap(data=>insertLinkedTables(data)).map(data => film.copy(actorsId = data(0), genresId = data(1), directorsId = data(2), countriesId = data(3)))
-
-    Await.result(s, 10000 seconds)
-    s
+    result.flatMap(data => insertLinkedTables(data)).map(data => film.copy(actorsId = data(0), genresId = data(1), directorsId = data(2), countriesId = data(3)))
   }
 
   private def insertLinkedTables(film: NewFilmWithId) = {
-    val actorsListForInsertion = HelpFunctions.fOption( film.actorsId.map(_.map(data=>ActorFilm(None,data, film.id.get))).map(actorsFilmsDAO.insertListActorFilm)).map(_.flatten).map(_.map(_.map(_.actorId)))
-    val genresListForInsertion = HelpFunctions.fOption( film.genresId.map(_.map(data=>GenreFilm(None,data, film.id.get))).map(genresFilmsDAO.insertListGenresFilm)).map(_.flatten).map(_.map(_.map(_.genreId)))
-    val directorsListForInsertion = HelpFunctions.fOption( film.directorsId.map(_.map(data=>DirectorFilm(None,data, film.id.get))).map(directorsFilmsDAO.insertListDirectorsFilm)).map(_.flatten).map(_.map(_.map(_.directorId)))
-    val countriesListForInsertion = HelpFunctions.fOption( film.countriesId.map(_.map(data=>CountryFilm(None,data, film.id.get))).map(countriesFilmsDAO.insertListCountryFilm)).map(_.flatten).map(_.map(_.map(_.countryId)))
+    val actorsListForInsertion = HelpFunctions.fOption(film.actorsId.map(_.map(data =>
+      ActorFilm(None, data, film.id.get))).map(actorsFilmsDAO.insertListActorFilm))
+      .map(_.flatten).map(_.map(_.map(_.actorId)))
+    
+    val genresListForInsertion = HelpFunctions.fOption(film.genresId.map(_.map(data =>
+      GenreFilm(None, data, film.id.get))).map(genresFilmsDAO.insertListGenresFilm))
+      .map(_.flatten).map(_.map(_.map(_.genreId)))
+
+    val directorsListForInsertion = HelpFunctions.fOption(film.directorsId.map(_.map(data =>
+      DirectorFilm(None, data, film.id.get))).map(directorsFilmsDAO.insertListDirectorsFilm))
+      .map(_.flatten).map(_.map(_.map(_.directorId)))
+
+    val countriesListForInsertion = HelpFunctions.fOption(film.countriesId.map(_.map(data =>
+      CountryFilm(None, data, film.id.get))).map(countriesFilmsDAO.insertListCountryFilm))
+      .map(_.flatten).map(_.map(_.map(_.countryId)))
 
     Future.sequence(List(actorsListForInsertion, genresListForInsertion, directorsListForInsertion, countriesListForInsertion))
   }
