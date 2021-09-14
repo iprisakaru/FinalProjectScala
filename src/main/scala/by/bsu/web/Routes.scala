@@ -19,7 +19,7 @@ trait Routes extends FilmsApi with GenresApi with DirectorsApi with ActorsApi {
       actorsRoute
     } ~ pathPrefix("update-genres"){
       updateGenres
-    } ~ pathPrefix("help_create"){
+    } ~ pathPrefix("help-create"){
       filmHelpRoute
     }
 }
