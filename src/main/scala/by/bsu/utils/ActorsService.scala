@@ -1,9 +1,7 @@
 package by.bsu.utils
 
 import by.bsu.model.dao.ActorsDAO
-import by.bsu.model.repository.{Actor, NewFilmWithFields}
-
-import scala.concurrent.Future
+import by.bsu.model.repository.Actor
 
 class ActorsService(actorsDao: ActorsDAO) {
 

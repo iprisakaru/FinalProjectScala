@@ -2,7 +2,7 @@ package by.bsu.utils
 
 import by.bsu.Application.dbConfig
 import by.bsu.model.Db
-import by.bsu.model.dao.{ActorsDAO, ActorsFilmsDAO, CountriesDAO, CountriesFilmsDAO, DirectorsDAO, DirectorsFilmsDAO, FilmsDAO, GenresDAO, GenresFilmsDAO, LanguagesDAO}
+import by.bsu.model.dao.{ActorsDAO, ActorsFilmsDAO, AdminsDAO, CountriesDAO, CountriesFilmsDAO, DirectorsDAO, DirectorsFilmsDAO, FilmsDAO, GenresDAO, GenresFilmsDAO, LanguagesDAO}
 
 object RouteService {
 
@@ -19,4 +19,8 @@ object RouteService {
     val genresFilmsService = new GenresFilmsService(new GenresFilmsDAO(dbConfig))
     val countriesFilmsService = new CountriesFilmsService(new CountriesFilmsDAO(dbConfig))
     val actorsFilmsService = new ActorsFilmsService(new ActorsFilmsDAO(dbConfig))
+
+    //users and admins tables
+
+    val adminsService = new AdminsService(new AdminsDAO(dbConfig))
 }

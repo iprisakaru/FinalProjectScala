@@ -4,12 +4,15 @@ import akka.actor.ActorSystem
 import akka.event.{Logging, LoggingAdapter}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives.logRequestResult
+import by.bsu.model.repository.Admin
 import by.bsu.model.{Db, DbConfiguration}
+import by.bsu.utils.RouteService
 import by.bsu.web.Routes
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.Logger
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, ExecutionContext}
 import scala.language.postfixOps
 
 object Application extends App with DbConfiguration with Db with Routes {
@@ -25,6 +28,7 @@ object Application extends App with DbConfiguration with Db with Routes {
   LOGGER.info("Program is running.")
   //starting web api
   LOGGER.info("Web app is running")
+
   val bindingFuture = Http()
     .bindAndHandle(handler = logRequestResult("log")(routes)
       , interface = configData.httpInterface, port = configData.httpPort)
