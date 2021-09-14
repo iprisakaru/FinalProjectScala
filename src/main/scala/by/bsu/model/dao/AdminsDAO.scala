@@ -2,12 +2,10 @@ package by.bsu.model.dao
 
 import by.bsu.model.Db
 import by.bsu.model.repository.{Admin, AdminsTable}
-import by.bsu.utils.HelpFunctions
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 import scala.language.postfixOps
 
 class AdminsDAO(val config: DatabaseConfig[JdbcProfile])
@@ -18,16 +16,12 @@ class AdminsDAO(val config: DatabaseConfig[JdbcProfile])
   import scala.concurrent.ExecutionContext.Implicits.global
 
   def insertUniq(director: Admin): Future[Option[Admin]] = {
-    val e =db.run(createQuery(director).asTry).map(_.toOption)
-    Await.result(e, 1000 seconds)
-    e
+    db.run(createQuery(director).asTry).map(_.toOption)
   }
 
   def insert(admin: Admin): Future[Admin] = {
-    val e = db.run(admins returning admins.map(_.admin_id) += admin)
+    db.run(admins returning admins.map(_.admin_id) += admin)
       .map(id => admin.copy(id = Option(id)))
-    Await.result(e, 1000 seconds)
-    e
   }
 
   private def createQuery(entity: Admin): DBIOAction[Admin, NoStream, Effect.Read with Effect.Write with Effect.Transactional] = {
