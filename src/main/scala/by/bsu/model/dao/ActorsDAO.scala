@@ -2,12 +2,10 @@ package by.bsu.model.dao
 
 import by.bsu.model.Db
 import by.bsu.model.repository.{Actor, ActorsTable}
-import by.bsu.utils.HelpFunctions
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Future
-import scala.util.Try
 
 class ActorsDAO(val config: DatabaseConfig[JdbcProfile])
   extends Db with ActorsTable {
@@ -48,13 +46,13 @@ class ActorsDAO(val config: DatabaseConfig[JdbcProfile])
   private def createQuery(entity: Actor): DBIOAction[Actor, NoStream, Effect.Read with Effect.Write with Effect.Transactional] =
 
     (for {
-      existing <- actors.filter(e => e.name === entity.name).result //Check, if entity exists
-      e <- if (existing.isEmpty)
+      existing <- actors.filter(_.name === entity.name).result //Check, if entity exists
+      data <- if (existing.isEmpty)
         (actors returning actors) += entity
       else {
         throw new Exception(s"Create failed: entity already exists")
       }
-    } yield e).transactionally
+    } yield data).transactionally
 
 
   def insertListActor(entities: Seq[Actor]): Future[Option[Seq[Actor]]] = {

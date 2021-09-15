@@ -1,18 +1,17 @@
 package by.bsu.model.dao
 
-import by.bsu.model.repository.{CountriesTable, Country}
 import by.bsu.model.Db
-import by.bsu.utils.HelpFunctions
+import by.bsu.model.repository.{CountriesTable, Country}
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Future
-import scala.util.Try
 
 class CountriesDAO(val config: DatabaseConfig[JdbcProfile])
-  extends Db with CountriesTable  {
+  extends Db with CountriesTable {
 
   import config.driver.api._
+
   import scala.concurrent.ExecutionContext.Implicits.global
 
   def update(id: Int, country: Country): Future[Int] = {
@@ -43,16 +42,16 @@ class CountriesDAO(val config: DatabaseConfig[JdbcProfile])
   private def createQuery(entity: Country): DBIOAction[Country, NoStream, Effect.Read with Effect.Write with Effect.Transactional] =
 
     (for {
-      existing <- countries.filter(e => e.name === entity.name).result //Check, if entity exists
-      e <- if (existing.isEmpty)
+      existing <- countries.filter(_.name === entity.name).result //Check, if entity exists
+      data <- if (existing.isEmpty)
         (countries returning countries) += entity
       else {
         throw new Exception(s"Create failed: entity already exists")
       }
-    } yield e).transactionally
+    } yield data).transactionally
 
 
-  def insertListCountries(entities: Seq[Country])= {
+  def insertListCountries(entities: Seq[Country]) = {
     db.run(DBIO.sequence(entities.map(createQuery(_))).transactionally.asTry).map(_.toOption)
   }
 

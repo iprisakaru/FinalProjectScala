@@ -25,6 +25,7 @@ class GenresFilmsDAO(val config: DatabaseConfig[JdbcProfile])
       _ > 0
     }
   }
+
   def findAll(): Future[Seq[GenreFilm]] = db.run(genresFilms.result)
 
 
@@ -32,7 +33,7 @@ class GenresFilmsDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(genresFilms.delete)
   }
 
-  def deleteByFilmIdQuery(id: Long)={
+  def deleteByFilmIdQuery(id: Long) = {
     genresFilms.filter(e => e.film_id === id).delete
   }
 
@@ -50,16 +51,16 @@ class GenresFilmsDAO(val config: DatabaseConfig[JdbcProfile])
   private def createQuery(entity: GenreFilm): DBIOAction[GenreFilm, NoStream, Effect.Read with Effect.Write with Effect.Transactional] =
 
     (for {
-      existing <- genresFilms.filter(e => (e.genre_id === entity.genreId && e.film_id === entity.filmId)).result //Check, if entity exists
-      e <- if (existing.isEmpty)
+      existing <- genresFilms.filter(data => (data.genre_id === entity.genreId && data.film_id === entity.filmId)).result //Check, if entity exists
+      data <- if (existing.isEmpty)
         (genresFilms returning genresFilms) += entity
       else {
         throw new Exception(s"Create failed: entity already exists")
       }
-    } yield e).transactionally
+    } yield data).transactionally
 
 
-  def insertListGenresFilm(entities: Seq[GenreFilm])= {
+  def insertListGenresFilm(entities: Seq[GenreFilm]) = {
     db.run(DBIO.sequence(entities.map(createQuery(_))).transactionally.asTry).map(_.toOption)
   }
 

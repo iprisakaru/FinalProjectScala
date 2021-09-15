@@ -46,13 +46,13 @@ class ActorsFilmsDAO(val config: DatabaseConfig[JdbcProfile])
   private def createQuery(entity: ActorFilm): DBIOAction[ActorFilm, NoStream, Effect.Read with Effect.Write with Effect.Transactional] =
 
     (for {
-      existing <- actorsFilms.filter(e => e.actor_id === entity.actorId && e.film_id === entity.filmId).result //Check, if entity exists
-      e <- if (existing.isEmpty)
+      existing <- actorsFilms.filter(data => data.actor_id === entity.actorId && data.film_id === entity.filmId).result //Check, if entity exists
+      data <- if (existing.isEmpty)
         (actorsFilms returning actorsFilms) += entity
       else {
         throw new Exception(s"Create failed: entity already exists")
       }
-    } yield e).transactionally
+    } yield data).transactionally
 
 
   def insertListActorFilm(entities: Seq[ActorFilm]) = {

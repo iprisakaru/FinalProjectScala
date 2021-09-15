@@ -47,13 +47,13 @@ class DirectorsDAO(val config: DatabaseConfig[JdbcProfile])
 
   private def createQuery(entity: Director): DBIOAction[Director, NoStream, Effect.Read with Effect.Write with Effect.Transactional] = {
     (for {
-      existing <- directors.filter(e => e.name === entity.name).result //Check, if entity exists
-      e <- if (existing.isEmpty)
+      existing <- directors.filter(_.name === entity.name).result //Check, if entity exists
+      data <- if (existing.isEmpty)
         (directors returning directors) += entity
       else {
         throw new Exception(s"Create failed: entity already exists")
       }
-    } yield (e)).transactionally
+    } yield (data)).transactionally
 
   }
 

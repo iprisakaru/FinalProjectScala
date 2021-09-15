@@ -48,13 +48,13 @@ class GenresDAO(val config: DatabaseConfig[JdbcProfile])
   private def createQuery(entity: Genre): DBIOAction[Genre, NoStream, Effect.Read with Effect.Write with Effect.Transactional] =
 
     (for {
-      existing <- genres.filter(e => e.name === entity.name).result //Check, if entity exists
-      e <- if (existing.isEmpty)
+      existing <- genres.filter(_.name === entity.name).result //Check, if entity exists
+      data <- if (existing.isEmpty)
         (genres returning genres) += entity
       else {
         throw new Exception(s"Create failed: entity already exists")
       }
-    } yield e).transactionally
+    } yield data).transactionally
 
 
   def insertListGenres(entities: Seq[Genre]) = {

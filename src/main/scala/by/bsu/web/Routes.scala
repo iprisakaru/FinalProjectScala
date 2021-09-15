@@ -24,5 +24,5 @@ trait Routes extends FilmsApi with GenresApi with DirectorsApi with ActorsApi {
         } ~ pathPrefix("actors") {
           actorsRoute
         }
-    }
+    } ~ authenticateOAuth2[]
 }

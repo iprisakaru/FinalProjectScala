@@ -3,8 +3,6 @@ package by.bsu.utils
 import by.bsu.model.dao.LanguagesDAO
 import by.bsu.model.repository.Language
 
-import scala.concurrent.Future
-
 class LanguagesService(languagesDao: LanguagesDAO) {
   def getById(id: Int) = {
     languagesDao.findById(id)

@@ -26,13 +26,13 @@ class AdminsDAO(val config: DatabaseConfig[JdbcProfile])
 
   private def createQuery(entity: Admin): DBIOAction[Admin, NoStream, Effect.Read with Effect.Write with Effect.Transactional] = {
     (for {
-      existing <- admins.filter(e => e.username === entity.username).result //Check, if entity exists
-      e <- if (existing.isEmpty)
+      existing <- admins.filter(_.username === entity.username).result //Check, if entity exists
+      data <- if (existing.isEmpty)
         (admins returning admins) += entity
       else {
         throw new Exception(s"Create failed: entity already exists")
       }
-    } yield (e)).transactionally
+    } yield (data)).transactionally
 
   }
 

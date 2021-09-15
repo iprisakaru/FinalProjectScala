@@ -30,7 +30,7 @@ class DirectorsFilmsDAO(val config: DatabaseConfig[JdbcProfile])
     }
   }
 
-  def deleteByFilmIdQuery(id: Long)={
+  def deleteByFilmIdQuery(id: Long) = {
     directorsFilms.filter(e => e.film_id === id).delete
   }
 
@@ -52,16 +52,16 @@ class DirectorsFilmsDAO(val config: DatabaseConfig[JdbcProfile])
   private def createQuery(entity: DirectorFilm): DBIOAction[DirectorFilm, NoStream, Effect.Read with Effect.Write with Effect.Transactional] =
 
     (for {
-      existing <- directorsFilms.filter(e => e.director_id === entity.directorId && e.film_id === entity.filmId).result //Check, if entity exists
-      e <- if (existing.isEmpty)
+      existing <- directorsFilms.filter(data => data.director_id === entity.directorId && data.film_id === entity.filmId).result //Check, if entity exists
+      data <- if (existing.isEmpty)
         (directorsFilms returning directorsFilms) += entity
       else {
         throw new Exception(s"Create failed: entity already exists")
       }
-    } yield e).transactionally
+    } yield data).transactionally
 
 
-  def insertListDirectorsFilm(entities: Seq[DirectorFilm])= {
+  def insertListDirectorsFilm(entities: Seq[DirectorFilm]) = {
     db.run(DBIO.sequence(entities.map(createQuery(_))).transactionally.asTry).map(_.toOption)
   }
 }

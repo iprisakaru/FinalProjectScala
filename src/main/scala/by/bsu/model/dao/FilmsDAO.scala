@@ -23,10 +23,17 @@ class FilmsDAO(override val config: DatabaseConfig[JdbcProfile])
 
   def insertFilm(film: NewFilmWithId): Future[NewFilmWithId] = {
 
+    val posOfEntities = Map(
+      "actorsId" -> 0,
+      "genresId" -> 1,
+      "directorsId" -> 2,
+      "countriesId" -> 3,
+    )
+
     val result = db.run(films returning films.map(_.filmId) += Film(film.id, film.name, film.ageLimit, film.shortDescription, film.timing, film.image,
       film.releaseDate, film.awards, film.languageId, Option(false)))
       .map(id => film.copy(id = Option(id)))
-    result.flatMap(data => insertLinkedTables(data)).map(data => film.copy(actorsId = data(0), genresId = data(1), directorsId = data(2), countriesId = data(3)))
+    result.flatMap(data => insertLinkedTables(data)).map(data => film.copy(actorsId = data(posOfEntities("actorsId")), genresId = data(posOfEntities("genresId")), directorsId = data(posOfEntities("directorsId")), countriesId = data(posOfEntities("countriesId"))))
   }
 
   private def insertLinkedTables(film: NewFilmWithId) = {
@@ -59,8 +66,7 @@ class FilmsDAO(override val config: DatabaseConfig[JdbcProfile])
 
 
   def deleteById(id: Long) = {
-    val e = db.run(deleteByIdLinkedTablesQuery(id))
-    e.map(_.toOption)
+    db.run(deleteByIdLinkedTablesQuery(id)).map(_.toOption)
   }
 
   private def deleteByIdLinkedTablesQuery(id: Long) = {
