@@ -4,7 +4,7 @@ import by.bsu.model.Db
 
 case class Film(id: Option[Long], name: String, ageLimit: Option[String], shortDescription: Option[String],
                 timing: Option[String], image: Option[String], releaseDate: String, awards: Option[String],
-                languageId: Option[Int], isPublic: Boolean)
+                languageId: Option[Int], isPublic: Option[Boolean])
 
 case class NewFilmWithFields(name: String, ageLimit: Option[String], actors: Option[Seq[String]], genres: Option[Seq[String]],
                              countries: Option[Seq[String]], directors: Option[Seq[String]], shortDescription: Option[String],
@@ -14,7 +14,7 @@ case class NewFilmWithFields(name: String, ageLimit: Option[String], actors: Opt
 case class NewFilmWithId(id: Option[Long], name: String, ageLimit: Option[String], actorsId: Option[Seq[Int]],
                          genresId: Option[Seq[Int]], countriesId: Option[Seq[Int]], directorsId: Option[Seq[Int]],
                          shortDescription: Option[String], timing: Option[String], image: Option[String], releaseDate: String,
-                         awards: Option[String], languageId: Option[Int], isPublic: Boolean)
+                         awards: Option[String], languageId: Option[Int], isPublic: Option[Boolean])
 
 
 trait FilmsTable extends LanguagesTable {
@@ -42,7 +42,7 @@ trait FilmsTable extends LanguagesTable {
 
     def languageId = column[Option[Int]]("language_id")
 
-    def public = column[Boolean]("is_public")
+    def public = column[Option[Boolean]]("is_public")
 
     def fk_language_id = foreignKey("fk_language_id", languageId, languages)(_.language_id)
 

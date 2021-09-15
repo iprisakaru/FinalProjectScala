@@ -20,51 +20,53 @@ trait FilmJsonMapping extends DefaultJsonProtocol {
 
 trait FilmsApi extends FilmJsonMapping {
   val filmRoute: Route = {
-    authenticateBasicAsync("authorisation", HTTPBasicAuth.myAdminsPassAuthenticator) {
-      user =>
-        (path(IntNumber) & get) { id => {
-          LOGGER.debug(s"Getting films with $id id")
-          complete(filmsService.getById(id).map(_.toJson))
-        }
+    delete {
+      (path(IntNumber)) { id => {
+        LOGGER.debug(s"Deleting a film with $id id")
+        complete(filmsService.deleteById(id).map(_.toJson))
+      }
+      }
+    } ~
+      get {
+        {
+          LOGGER.debug("Getting all films")
+          complete(filmsService.getAll().map(_.toJson))
         } ~
-          get {
-            LOGGER.debug("Getting all films")
-            complete(filmsService.getAll().map(_.toJson))
-          } ~
-          post {
-            entity(as[NewFilmWithId]) { entity => {
-              LOGGER.debug(s"Creating a new film with ${entity.id} id")
-              complete(filmsService.createWithoutFilling(entity).map(_.toJson))
-            }
-            }
-          } ~
-          (path(IntNumber) & put) { id =>
-            entity(as[Film]) { entity => {
-              LOGGER.debug(s"Updating a new film with $id id")
-              complete(filmsService.updateById(id, entity).map(_.toJson))
-            }
-            }
-          } ~
-          (path(IntNumber) & delete) { id => {
-            LOGGER.debug(s"Deleting a film with $id id")
-            complete(filmsService.deleteById(id).map(_.toJson))
+          (path(IntNumber)) { id => {
+            LOGGER.debug(s"Getting films with $id id")
+            complete(filmsService.getById(id).map(_.toJson))
           }
           }
-    }
+      } ~
+      (path(IntNumber) & put) { id =>
+        entity(as[Film]) { entity => {
+          LOGGER.debug(s"Updating a new film with $id id")
+          complete(filmsService.updateById(id, entity).map(_.toJson))
+        }
+        }
+      } ~
+      post {
+        path("help") {
+          filmHelpRoute
+        } ~
+          entity(as[NewFilmWithId]) { entity => {
+            LOGGER.debug(s"Creating a new film with ${entity.id} id")
+            complete(filmsService.createWithoutFilling(entity).map(_.toJson))
+          }
+          }
+      }
+
   }
 
   val filmHelpRoute: Route = {
-    authenticateBasicAsync(
-      "authorisation", HTTPBasicAuth.myAdminsPassAuthenticator) {
-      adminName =>
-        LOGGER.debug(s"Admin $adminName created film with a help of another API.")
-        post {
-          entity(as[NewFilmWithFields]) { customer => {
-            complete(filmsService.createFilmWithFilling(customer).map(_.toJson))
-          }
-          }
-        }
+
+    post {
+      entity(as[NewFilmWithFields]) { customer => {
+        complete(filmsService.createFilmWithFilling(customer).map(_.toJson))
+      }
+      }
     }
+
   }
 
 

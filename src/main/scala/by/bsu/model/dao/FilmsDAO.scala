@@ -1,7 +1,7 @@
 package by.bsu.model.dao
 
 import by.bsu.model.Db
-import by.bsu.model.repository._
+import by.bsu.model.repository.{ActorFilm, _}
 import by.bsu.utils.HelpFunctions
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
@@ -24,7 +24,7 @@ class FilmsDAO(override val config: DatabaseConfig[JdbcProfile])
   def insertFilm(film: NewFilmWithId): Future[NewFilmWithId] = {
 
     val result = db.run(films returning films.map(_.filmId) += Film(film.id, film.name, film.ageLimit, film.shortDescription, film.timing, film.image,
-      film.releaseDate, film.awards, film.languageId, false))
+      film.releaseDate, film.awards, film.languageId, Option(false)))
       .map(id => film.copy(id = Option(id)))
     result.flatMap(data => insertLinkedTables(data)).map(data => film.copy(actorsId = data(0), genresId = data(1), directorsId = data(2), countriesId = data(3)))
   }
@@ -33,7 +33,7 @@ class FilmsDAO(override val config: DatabaseConfig[JdbcProfile])
     val actorsListForInsertion = HelpFunctions.fOption(film.actorsId.map(_.map(data =>
       ActorFilm(None, data, film.id.get))).map(actorsFilmsDAO.insertListActorFilm))
       .map(_.flatten).map(_.map(_.map(_.actorId)))
-    
+
     val genresListForInsertion = HelpFunctions.fOption(film.genresId.map(_.map(data =>
       GenreFilm(None, data, film.id.get))).map(genresFilmsDAO.insertListGenresFilm))
       .map(_.flatten).map(_.map(_.map(_.genreId)))
@@ -57,10 +57,24 @@ class FilmsDAO(override val config: DatabaseConfig[JdbcProfile])
 
   def findAll(): Future[Seq[Film]] = db.run(films.filter(_.public === false).result)
 
-  def deleteById(id: Long): Future[Boolean] = {
-    db.run(films.filter(_.filmId === id).delete) map {
-      _ > 0
-    }
+
+  def deleteById(id: Long) = {
+    val e = db.run(deleteByIdLinkedTablesQuery(id))
+    e.map(_.toOption)
+  }
+
+  private def deleteByIdLinkedTablesQuery(id: Long) = {
+    (for {
+      genresDeleted <- genresFilmsDAO.deleteByFilmIdQuery(id).asTry
+      directorsDeleted <- directorsFilmsDAO.deleteByFilmIdQuery(id).asTry
+      countriesDeleted <- countriesFilmsDAO.deleteByFilmIdQuery(id).asTry
+      actorsDeleted <- actorsFilmsDAO.deleteByFilmIdQuery(id)
+      filmsDeleted <- deleteByFilmIdQuery(id).asTry
+    } yield (filmsDeleted)).transactionally
+  }
+
+  def deleteByFilmIdQuery(id: Long) = {
+    films.filter(e => e.filmId === id).delete
   }
 
   def findById(id: Long): Future[Option[Film]] = {

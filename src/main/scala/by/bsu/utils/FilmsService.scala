@@ -31,7 +31,7 @@ class FilmsService(filmsDAO: FilmsDAO) {
     filmsDAO.update(id, film)
   }
 
-  def deleteById(id: Long): Future[Boolean] = {
+  def deleteById(id: Long): Future[Option[Int]] = {
     filmsDAO.deleteById(id)
   }
 
@@ -48,7 +48,7 @@ class FilmsService(filmsDAO: FilmsDAO) {
 
     val creationOfFilms = result.zip(creationOfActors.zip(creationOfGenres.zip(creationOfCountries.zip(creationOfDirectors.zip(creationOfLanguages)))))
       .flatMap(data => {
-        createWithoutFilling(NewFilmWithId(None, data._1.name, Option(data._1.ageLimit.get), data._2._1, data._2._2._1, data._2._2._2._1, data._2._2._2._2._1, data._1.shortDescription, data._1.timing, data._1.image, data._1.releaseDate, data._1.awards, data._2._2._2._2._2, false))
+        createWithoutFilling(NewFilmWithId(None, data._1.name, Option(data._1.ageLimit.get), data._2._1, data._2._2._1, data._2._2._2._1, data._2._2._2._2._1, data._1.shortDescription, data._1.timing, data._1.image, data._1.releaseDate, data._1.awards, data._2._2._2._2._2, Option(false)))
       }).flatMap(createWithoutFilling)
 
 
@@ -86,6 +86,6 @@ class FilmsService(filmsDAO: FilmsDAO) {
 
   def updateFilmsPerDay(): Future[List[NewFilmWithId]] = {
     val data = updateDataController.periodicUpdateData()
-    data._1.map(_.map(name => NewFilmWithId(None, name, None, None, None, None, None, None, None, None, data._2, None, None, false)))
+    data._1.map(_.map(name => NewFilmWithId(None, name, None, None, None, None, None, None, None, None, data._2, None, None, Option(false))))
   }
 }

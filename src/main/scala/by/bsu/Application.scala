@@ -10,6 +10,7 @@ import by.bsu.utils.RouteService
 import by.bsu.web.Routes
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.Logger
+import com.github.t3hnar.bcrypt._
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext}
@@ -28,6 +29,14 @@ object Application extends App with DbConfiguration with Db with Routes {
   LOGGER.info("Program is running.")
   //starting web api
   LOGGER.info("Web app is running")
+
+  val string = "hello"
+
+  val a = string.bcrypt
+  val b = string.bcrypt
+  val test1 = string.isBcrypted(a)
+  val test2 = a==b
+  val test3 = a.isBcrypted(b)
 
   val bindingFuture = Http()
     .bindAndHandle(handler = logRequestResult("log")(routes)

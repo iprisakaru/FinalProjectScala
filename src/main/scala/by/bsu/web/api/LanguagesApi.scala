@@ -5,9 +5,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import by.bsu.Application.LOGGER
 import by.bsu.model.repository.Language
-import by.bsu.utils.RouteService
 import by.bsu.utils.RouteService.languagesService
-import by.bsu.web.api.auth.HTTPBasicAuth
 import spray.json.{DefaultJsonProtocol, RootJsonFormat, enrichAny}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -20,32 +18,31 @@ trait LanguagesJsonMapping extends DefaultJsonProtocol {
 
 trait LanguagesApi extends LanguagesJsonMapping {
   val languagesRoute: Route = {
-    authenticateBasicAsync("authorisation", HTTPBasicAuth.myAdminsPassAuthenticator) {
-      user =>
-        (path(IntNumber) & get) { id => {
-          LOGGER.debug(s"Getting genre with $id id")
-          complete(languagesService.getById(id).map(_.get.toJson))
-        }
-        } ~ get {
-          LOGGER.debug("Getting all genres")
-          complete(languagesService.getAll().map(_.toJson))
-        } ~ (path(IntNumber) & put) { id =>
-          entity(as[Language]) { entity => {
-            LOGGER.debug(s"Updating a new genre with $id id")
-            complete(languagesService.update(id, entity).map(_.toJson))
-          }
-          }
-        } ~ (path(IntNumber) & delete) { id => {
-          LOGGER.debug(s"Deleting a genre with $id id")
-          complete(languagesService.deleteById(id).map(_.toJson))
-        }
-        } ~ post {
-          entity(as[Language]) { entity => {
-            LOGGER.debug(s"Creating a new film with ${entity.id} id")
-            complete(languagesService.create(entity).map(_.toJson))
-          }
-          }
-        }
+
+    (path(IntNumber) & get) { id => {
+      LOGGER.debug(s"Getting genre with $id id")
+      complete(languagesService.getById(id).map(_.get.toJson))
+    }
+    } ~ get {
+      LOGGER.debug("Getting all genres")
+      complete(languagesService.getAll().map(_.toJson))
+    } ~ (path(IntNumber) & put) { id =>
+      entity(as[Language]) { entity => {
+        LOGGER.debug(s"Updating a new genre with $id id")
+        complete(languagesService.update(id, entity).map(_.toJson))
+      }
+      }
+    } ~ (path(IntNumber) & delete) { id => {
+      LOGGER.debug(s"Deleting a genre with $id id")
+      complete(languagesService.deleteById(id).map(_.toJson))
+    }
+    } ~ post {
+      entity(as[Language]) { entity => {
+        LOGGER.debug(s"Creating a new film with ${entity.id} id")
+        complete(languagesService.create(entity).map(_.toJson))
+      }
+      }
+
     }
   }
 

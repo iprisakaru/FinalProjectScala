@@ -32,6 +32,10 @@ class GenresFilmsDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(genresFilms.delete)
   }
 
+  def deleteByFilmIdQuery(id: Long)={
+    genresFilms.filter(e => e.film_id === id).delete
+  }
+
   def findByName(genreId: Int, filmId: Long): Future[Option[Long]] = {
     db.run(genresFilms.filter(data => (data.genre_id === genreId && data.film_id === filmId)).result.headOption.map(_.get.genreFilmId))
   }

@@ -30,6 +30,10 @@ class DirectorsFilmsDAO(val config: DatabaseConfig[JdbcProfile])
     }
   }
 
+  def deleteByFilmIdQuery(id: Long)={
+    directorsFilms.filter(e => e.film_id === id).delete
+  }
+
   def deleteAll(): Future[Int] = {
     db.run(directorsFilms.delete)
   }

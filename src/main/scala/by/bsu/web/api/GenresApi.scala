@@ -6,7 +6,6 @@ import akka.http.scaladsl.server.Route
 import by.bsu.Application.LOGGER
 import by.bsu.model.repository.Genre
 import by.bsu.utils.RouteService.genresService
-import by.bsu.web.api.auth.HTTPBasicAuth
 import spray.json.{DefaultJsonProtocol, RootJsonFormat, enrichAny}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -40,22 +39,23 @@ trait GenresApi extends GenresJsonMapping {
         complete(genresService.deleteById(id).map(_.toJson))
       }
       } ~ post {
-      entity(as[Genre]) { entity => {
-        LOGGER.debug(s"Creating a new film with ${entity.id} id")
-        complete(genresService.create(entity).map(_.toJson))
-      }
-      }
+      path("update") {
+        updateGenres
+      } ~
+        entity(as[Genre]) { entity => {
+          LOGGER.debug(s"Creating a new film with ${entity.id} id")
+          complete(genresService.create(entity).map(_.toJson))
+        }
+        }
     }
   }
 
   val updateGenres = {
-    authenticateBasicAsync("authorisation", HTTPBasicAuth.myAdminsPassAuthenticator) {
-      user =>
-        (post {
-          LOGGER.debug(s"for $user")
-          complete(genresService.getGenresFromApi.map(_.map(_.toJson)))
-        })
-    }
+
+    (post {
+      complete(genresService.getGenresFromApi.map(_.map(_.toJson)))
+    })
+
   }
 
 }

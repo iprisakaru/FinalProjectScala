@@ -42,6 +42,10 @@ class CountriesFilmsDAO(val config: DatabaseConfig[JdbcProfile])
     }).flatten
   }
 
+  def deleteByFilmIdQuery(id: Long)={
+    countriesFilms.filter(e => e.film_id === id).delete
+  }
+
   private def createQuery(entity: CountryFilm): DBIOAction[CountryFilm, NoStream, Effect.Read with Effect.Write with Effect.Transactional] =
 
     (for {

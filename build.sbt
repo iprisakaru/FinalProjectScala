@@ -12,8 +12,8 @@ flywayPassword := "qwerty123"
 flywayLocations += "db/migration"
 flywayBaselineOnMigrate := true
 
-
 libraryDependencies ++= Seq(
+  "com.github.t3hnar" %% "scala-bcrypt" % "4.1",
   "org.postgresql" % "postgresql" % "42.2.23",
   "org.hsqldb" % "hsqldb" % "2.6.0",
   "com.typesafe.slick" %% "slick" % "3.3.3",
