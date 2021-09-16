@@ -3,6 +3,7 @@ package by.bsu.model.dao
 import by.bsu.model.Db
 import by.bsu.model.repository.{Genre, Language, LanguagesTable}
 import by.bsu.utils.HelpFunctions
+import org.apache.log4j.Logger
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
@@ -16,7 +17,10 @@ class LanguagesDAO(val config: DatabaseConfig[JdbcProfile])
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
+  val LOGGER = Logger.getLogger(this.getClass.getName)
+
   def update(id: Int, language: Language): Future[Int] = {
+    LOGGER.debug(s"Updating language $id id")
     db.run(languages.filter(_.language_id === id).map(customer => (customer.name))
       .update(language.name))
   }
@@ -38,6 +42,7 @@ class LanguagesDAO(val config: DatabaseConfig[JdbcProfile])
   }
 
   def insertUniq(language: Language): Future[Option[Language]] = {
+    LOGGER.debug(s"Inserting language ${language.name}")
     db.run(createQuery(language).asTry).map(_.toOption)
   }
 

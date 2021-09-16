@@ -2,6 +2,7 @@ package by.bsu.model.dao
 
 import by.bsu.model.Db
 import by.bsu.model.repository.{Admin, AdminsTable}
+import org.apache.log4j.Logger
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
@@ -15,8 +16,11 @@ class AdminsDAO(val config: DatabaseConfig[JdbcProfile])
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  def insertUniq(director: Admin): Future[Option[Admin]] = {
-    db.run(createQuery(director).asTry).map(_.toOption)
+  val LOGGER = Logger.getLogger(this.getClass.getName)
+
+  def insertUniq(admin: Admin): Future[Option[Admin]] = {
+    LOGGER.debug(s"Inserting admin ${admin.username}")
+    db.run(createQuery(admin).asTry).map(_.toOption)
   }
 
   def insert(admin: Admin): Future[Admin] = {
@@ -42,6 +46,7 @@ class AdminsDAO(val config: DatabaseConfig[JdbcProfile])
 
 
   def update(id: Int, actor: Admin): Future[Int] = {
+    LOGGER.debug(s"Updating admin $id id")
     db.run(admins.filter(_.admin_id === id).map(customer => (customer.username))
       .update(actor.username))
   }

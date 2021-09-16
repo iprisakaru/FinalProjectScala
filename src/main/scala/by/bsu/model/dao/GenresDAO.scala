@@ -2,12 +2,11 @@ package by.bsu.model.dao
 
 import by.bsu.model.Db
 import by.bsu.model.repository.{Genre, GenresTable}
-import by.bsu.utils.HelpFunctions
+import org.apache.log4j.Logger
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Future
-import scala.util.{Failure, Success, Try}
 
 class GenresDAO(val config: DatabaseConfig[JdbcProfile])
   extends Db with GenresTable {
@@ -16,7 +15,10 @@ class GenresDAO(val config: DatabaseConfig[JdbcProfile])
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
+  val LOGGER = Logger.getLogger(this.getClass.getName)
+
   def update(id: Int, genre: Genre): Future[Int] = {
+    LOGGER.debug(s"Updating genre $id id")
     db.run(genres.filter(_.genre_id === id).map(customer => (customer.name))
       .update(genre.name))
   }
@@ -37,8 +39,9 @@ class GenresDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(genres.filter(_.name === name).result.headOption)
   }
 
-  def insertUniq(actor: Genre): Future[Option[Genre]] = {
-    db.run(createQuery(actor).asTry).map(_.toOption)
+  def insertUniq(genre: Genre): Future[Option[Genre]] = {
+    LOGGER.debug(s"Inserting genre ${genre.name}")
+    db.run(createQuery(genre).asTry).map(_.toOption)
   }
 
   def deleteAll(): Future[Int] = {

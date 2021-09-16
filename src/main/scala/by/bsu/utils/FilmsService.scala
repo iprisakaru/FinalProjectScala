@@ -16,23 +16,48 @@ class FilmsService(filmsDAO: FilmsDAO) {
   var LOGGER = Logger.getLogger(this.getClass.getName)
 
   def createWithoutFilling(newFilmWithId: NewFilmWithId): Future[NewFilmWithId] = {
+    LOGGER.trace(s"Creating film without filling fields")
     filmsDAO.insertFilm(newFilmWithId)
   }
 
+  def getAllPublic(): Future[Seq[Film]] = {
+    LOGGER.trace(s"Getting all public films")
+    filmsDAO.findAll(true)
+  }
+
+  def getAllPrivate(): Future[Seq[Film]] = {
+    LOGGER.trace(s"Getting all private films")
+    filmsDAO.findAll(false)
+  }
+
   def getAll(): Future[Seq[Film]] = {
+    LOGGER.trace(s"Getting all films")
     filmsDAO.findAll()
   }
 
   def getById(id: Long): Future[Film] = {
+    LOGGER.trace(s"Getting film with $id id")
     filmsDAO.findById(id).map(_.get)
   }
 
   def updateById(id: Long, film: Film): Future[Int] = {
+    LOGGER.trace(s"Updating film with $id id")
     filmsDAO.update(id, film)
   }
 
   def deleteById(id: Long): Future[Option[Int]] = {
+    LOGGER.trace(s"Deleting film with $id")
     filmsDAO.deleteById(id)
+  }
+
+  def makePublic(id: Long) = {
+    LOGGER.trace(s"Making film $id id public")
+    filmsDAO.changeVisibility(id, true)
+  }
+
+  def makePrivate(id: Long) = {
+    LOGGER.trace(s"Making film $id id private")
+    filmsDAO.changeVisibility(id, false)
   }
 
   def createFilmWithFilling(newFilm: NewFilmWithFields): Future[NewFilmWithId] = {
@@ -56,6 +81,9 @@ class FilmsService(filmsDAO: FilmsDAO) {
   }
 
   def replaceEmptyFilm(newFilm: NewFilmWithFields, filmData: Future[NewFilmWithFields]): Future[NewFilmWithFields] = {
+
+    LOGGER.trace(s"Replacing empty fields of film")
+
     val genresFilled = if (newFilm.genres.isEmpty) filmData.map(_.genres) else Future(newFilm.genres)
     val actorsFilled = if (newFilm.actors.isEmpty) filmData.map(_.actors) else Future(newFilm.actors)
     val countriesFilled = if (newFilm.countries.isEmpty) filmData.map(_.countries) else Future(newFilm.countries)
@@ -76,6 +104,8 @@ class FilmsService(filmsDAO: FilmsDAO) {
   }
 
   def getFilmByNameAndYear(filmName: String, year: Int): Future[NewFilmWithFields] = {
+
+    LOGGER.trace(s"Trying to more info about film $filmName - $year")
     val data = updateDataController.getAdditionalDataFromApi(filmName, year)
     val result = data.map(_.map(film => NewFilmWithFields(film.Title, Option(film.Rated),
       Option(film.Actors.split(",").toSeq.map(_.trim)), Option(film.Genre.split(",").toSeq.map(_.trim)), Option(film.Country.split(",").toSeq.map(_.trim)), Option(film.Director.split(",").toSeq.map(_.trim)),
@@ -85,6 +115,7 @@ class FilmsService(filmsDAO: FilmsDAO) {
   }
 
   def updateFilmsPerDay(): Future[List[NewFilmWithId]] = {
+    LOGGER.trace(s"Trying to load genres from API")
     val data = updateDataController.periodicUpdateData()
     data._1.map(_.map(name => NewFilmWithId(None, name, None, None, None, None, None, None, None, None, data._2, None, None, Option(false))))
   }

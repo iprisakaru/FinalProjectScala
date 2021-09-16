@@ -28,9 +28,12 @@ trait FilmsApi extends FilmJsonMapping {
       }
     } ~
       get {
-        {
-          LOGGER.debug("Getting all films")
-          complete(filmsService.getAll().map(_.toJson))
+        path("private") {
+          LOGGER.debug("Getting all private films")
+          complete(filmsService.getAllPrivate())
+        } ~ {
+          LOGGER.debug("Getting all public films")
+          complete(filmsService.getAllPublic().map(_.toJson))
         } ~
           (path(IntNumber)) { id => {
             LOGGER.debug(s"Getting films with $id id")
@@ -54,6 +57,13 @@ trait FilmsApi extends FilmJsonMapping {
             complete(filmsService.createWithoutFilling(entity).map(_.toJson))
           }
           }
+      } ~
+      put {
+        path("public" / IntNumber) {
+          id =>
+            LOGGER.debug(s"Making film $id id public")
+            complete(filmsService.makePublic(id).map(_.toJson))
+        }
       }
 
   }

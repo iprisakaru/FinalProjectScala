@@ -40,7 +40,8 @@ trait GenresApi extends GenresJsonMapping {
       }
       } ~ post {
       path("update") {
-        updateGenres
+        LOGGER.debug("Running everyday genre update")
+        complete(genresService.getGenresFromApi.map(_.toJson))
       } ~
         entity(as[Genre]) { entity => {
           LOGGER.debug(s"Creating a new film with ${entity.id} id")
@@ -48,14 +49,6 @@ trait GenresApi extends GenresJsonMapping {
         }
         }
     }
-  }
-
-  val updateGenres = {
-
-    (post {
-      complete(genresService.getGenresFromApi.map(_.map(_.toJson)))
-    })
-
   }
 
 }

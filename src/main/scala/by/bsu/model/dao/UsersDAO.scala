@@ -3,6 +3,7 @@ package by.bsu.model.dao
 import by.bsu.model.Db
 import by.bsu.model.repository.{User, UsersTable}
 import by.bsu.utils.HelpFunctions
+import org.apache.log4j.Logger
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
@@ -15,13 +16,17 @@ class UsersDAO(val config: DatabaseConfig[JdbcProfile])
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
+  val LOGGER = Logger.getLogger(this.getClass.getName)
+
   def insert(user: User): Future[User] = {
+    LOGGER.debug(s"Inserting user ${user.code}")
     db.run(users returning users.map(_.user_id) += user)
       .map(id => user.copy(id = Option(id)))
   }
 
 
   def update(id: Int, user: User): Future[Int] = {
+    LOGGER.debug(s"Updating user $id id")
     db.run(users.filter(_.user_id === id).map(customer => (customer.code))
       .update(user.code))
   }

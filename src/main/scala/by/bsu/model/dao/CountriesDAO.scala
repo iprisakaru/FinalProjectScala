@@ -2,6 +2,7 @@ package by.bsu.model.dao
 
 import by.bsu.model.Db
 import by.bsu.model.repository.{CountriesTable, Country}
+import org.apache.log4j.Logger
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
@@ -14,7 +15,10 @@ class CountriesDAO(val config: DatabaseConfig[JdbcProfile])
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
+  val LOGGER = Logger.getLogger(this.getClass.getName)
+
   def update(id: Int, country: Country): Future[Int] = {
+    LOGGER.debug(s"Updating country $id id")
     db.run(countries.filter(_.country_id === id).map(customer => (customer.name))
       .update(country.name))
   }
@@ -36,6 +40,7 @@ class CountriesDAO(val config: DatabaseConfig[JdbcProfile])
   }
 
   def insertUniq(country: Country): Future[Option[Country]] = {
+    LOGGER.debug(s"Inserting country ${country.name}")
     db.run(createQuery(country).asTry).map(_.toOption)
   }
 

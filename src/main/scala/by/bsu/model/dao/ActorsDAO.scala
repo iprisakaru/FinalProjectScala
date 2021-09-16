@@ -2,6 +2,7 @@ package by.bsu.model.dao
 
 import by.bsu.model.Db
 import by.bsu.model.repository.{Actor, ActorsTable}
+import org.apache.log4j.Logger
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
@@ -14,7 +15,10 @@ class ActorsDAO(val config: DatabaseConfig[JdbcProfile])
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
+  val LOGGER = Logger.getLogger(this.getClass.getName)
+
   def update(id: Int, actor: Actor): Future[Int] = {
+    LOGGER.debug(s"Updating actor $id id")
     db.run(actors.filter(_.actor_id === id).map(customer => (customer.name))
       .update(actor.name))
   }
@@ -36,6 +40,7 @@ class ActorsDAO(val config: DatabaseConfig[JdbcProfile])
   }
 
   def insertUniq(actor: Actor): Future[Option[Actor]] = {
+    LOGGER.debug(s"Inserting actor ${actor.name}")
     db.run(createQuery(actor).asTry).map(_.toOption)
   }
 

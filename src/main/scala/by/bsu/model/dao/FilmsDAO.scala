@@ -3,6 +3,7 @@ package by.bsu.model.dao
 import by.bsu.model.Db
 import by.bsu.model.repository.{ActorFilm, _}
 import by.bsu.utils.HelpFunctions
+import org.apache.log4j.Logger
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
@@ -16,13 +17,15 @@ class FilmsDAO(override val config: DatabaseConfig[JdbcProfile])
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  val actorsFilmsDAO = new ActorsFilmsDAO(config)
-  val countriesFilmsDAO = new CountriesFilmsDAO(config)
-  val directorsFilmsDAO = new DirectorsFilmsDAO(config)
-  val genresFilmsDAO = new GenresFilmsDAO(config)
+  val LOGGER = Logger.getLogger(this.getClass.getName)
+
+  private val actorsFilmsDAO = new ActorsFilmsDAO(config)
+  private val countriesFilmsDAO = new CountriesFilmsDAO(config)
+  private val directorsFilmsDAO = new DirectorsFilmsDAO(config)
+  private val genresFilmsDAO = new GenresFilmsDAO(config)
 
   def insertFilm(film: NewFilmWithId): Future[NewFilmWithId] = {
-
+    LOGGER.debug(s"Inserting film ${film.name}")
     val posOfEntities = Map(
       "actorsId" -> 0,
       "genresId" -> 1,
@@ -58,12 +61,20 @@ class FilmsDAO(override val config: DatabaseConfig[JdbcProfile])
 
 
   def update(id: Long, film: Film): Future[Int] = {
+    LOGGER.debug(s"Updating film $id id")
     db.run(films.filter(_.filmId === id).map(customer => (customer.name, customer.ageLimit, customer.shortDescription, customer.timing, customer.image, customer.releaseDate, customer.awards, customer.languageId, customer.public))
       .update((film.name, film.ageLimit, film.shortDescription, film.timing, film.image, film.releaseDate, film.awards, film.languageId, film.isPublic)))
   }
 
-  def findAll(): Future[Seq[Film]] = db.run(films.filter(_.public === false).result)
+  def changeVisibility(id: Long, isVisible: Boolean) = {
+    db.run(films.filter(_.filmId === id).map(_.public).update(Option(isVisible)))
+  }
 
+  def findAll(isPublic: Boolean): Future[Seq[Film]] = db.run(films.filter(_.public === isPublic).result)
+
+  def findAll() = {
+    db.run(films.result)
+  }
 
   def deleteById(id: Long) = {
     db.run(deleteByIdLinkedTablesQuery(id)).map(_.toOption)

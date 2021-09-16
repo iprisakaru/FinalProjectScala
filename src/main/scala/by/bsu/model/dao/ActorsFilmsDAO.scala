@@ -2,6 +2,7 @@ package by.bsu.model.dao
 
 import by.bsu.model.Db
 import by.bsu.model.repository.{ActorFilm, ActorsFilmsTable, ActorsTable, FilmsTable}
+import org.apache.log4j.Logger
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
@@ -14,6 +15,8 @@ class ActorsFilmsDAO(val config: DatabaseConfig[JdbcProfile])
   import config.driver.api._
 
   import scala.concurrent.ExecutionContext.Implicits.global
+
+  val LOGGER = Logger.getLogger(this.getClass.getName)
 
   def insertActorFilm(actorFilm: ActorFilm): Future[ActorFilm] = {
     db.run((actorsFilms returning actorsFilms.map(_.actor_film_id) += actorFilm))

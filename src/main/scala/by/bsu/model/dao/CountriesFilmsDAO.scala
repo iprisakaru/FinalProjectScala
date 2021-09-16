@@ -2,6 +2,7 @@ package by.bsu.model.dao
 
 import by.bsu.model.Db
 import by.bsu.model.repository.{CountriesFilmsTable, CountriesTable, CountryFilm, FilmsTable}
+import org.apache.log4j.Logger
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
@@ -14,6 +15,8 @@ class CountriesFilmsDAO(val config: DatabaseConfig[JdbcProfile])
   import config.driver.api._
 
   import scala.concurrent.ExecutionContext.Implicits.global
+
+  val LOGGER = Logger.getLogger(this.getClass.getName)
 
   def insertCountryFilm(countryFilm: CountryFilm): Future[Long] = {
     db.run((countriesFilms returning countriesFilms.map(_.country_film_id) += countryFilm))

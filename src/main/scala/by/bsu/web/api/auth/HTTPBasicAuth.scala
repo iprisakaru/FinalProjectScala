@@ -11,11 +11,14 @@ import akka.http.scaladsl.server.directives.Credentials
 import akka.stream.ActorMaterializer
 import by.bsu.utils.RouteService
 import com.github.t3hnar.bcrypt._
+import org.apache.log4j.Logger
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 object HTTPBasicAuth {
+
+  val LOGGER = Logger.getLogger(this.getClass.getName)
 
   def myAuthenticateBasicAsync[T](realm: String,
                                   authenticate: (String, String) => Future[Option[T]]): Directive1[T] = {
@@ -32,9 +35,16 @@ object HTTPBasicAuth {
   }
 
   def myAuthenticator(username: String, password: String): Future[Option[String]] = {
+    LOGGER.trace(s"Admin $username trying to insert")
     RouteService.adminsService.getPassword(username).map(pass => {
-      if (password.isBcrypted(pass)) Some(username)
-      else None
+      if (password.isBcrypted(pass)) {
+        LOGGER.trace(s"Admin $username logged in successfully")
+        Some(username)
+      }
+      else {
+        LOGGER.trace(s"Admin $username logged in failed")
+        None
+      }
     })
   }
 
