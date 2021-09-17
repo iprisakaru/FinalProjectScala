@@ -39,15 +39,20 @@ trait GenresApi extends GenresJsonMapping {
         complete(genresService.deleteById(id).map(_.toJson))
       }
       } ~ post {
-      path("update") {
+      entity(as[Genre]) { entity => {
+        LOGGER.debug(s"Creating a new film with ${entity.id} id")
+        complete(genresService.create(entity).map(_.toJson))
+      }
+      }
+    }
+  }
+
+  val periodicRequest: Route = {
+    post {
+      path("genre") {
         LOGGER.debug("Running everyday genre update")
         complete(genresService.getGenresFromApi.map(_.toJson))
-      } ~
-        entity(as[Genre]) { entity => {
-          LOGGER.debug(s"Creating a new film with ${entity.id} id")
-          complete(genresService.create(entity).map(_.toJson))
-        }
-        }
+      }
     }
   }
 

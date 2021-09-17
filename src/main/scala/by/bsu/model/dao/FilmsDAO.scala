@@ -26,17 +26,18 @@ class FilmsDAO(override val config: DatabaseConfig[JdbcProfile])
 
   def insertFilm(film: NewFilmWithId): Future[NewFilmWithId] = {
     LOGGER.debug(s"Inserting film ${film.name}")
-    val posOfEntities = Map(
-      "actorsId" -> 0,
-      "genresId" -> 1,
-      "directorsId" -> 2,
-      "countriesId" -> 3,
-    )
+
+    val actorsId = 0
+    val genresId = 1
+    val directorsId = 2
+    val countriesId = 3
 
     val result = db.run(films returning films.map(_.filmId) += Film(film.id, film.name, film.ageLimit, film.shortDescription, film.timing, film.image,
       film.releaseDate, film.awards, film.languageId, Option(false)))
       .map(id => film.copy(id = Option(id)))
-    result.flatMap(data => insertLinkedTables(data)).map(data => film.copy(actorsId = data(posOfEntities("actorsId")), genresId = data(posOfEntities("genresId")), directorsId = data(posOfEntities("directorsId")), countriesId = data(posOfEntities("countriesId"))))
+    result.flatMap(data => insertLinkedTables(data)).map(data => film.copy(actorsId = data(actorsId),
+      genresId = data(genresId), directorsId = data(directorsId),
+      countriesId = data(countriesId)))
   }
 
   private def insertLinkedTables(film: NewFilmWithId) = {

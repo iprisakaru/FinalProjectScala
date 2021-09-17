@@ -23,6 +23,8 @@ trait Routes extends FilmsApi with GenresApi with DirectorsApi with ActorsApi {
           directorRoute
         } ~ pathPrefix("actors") {
           actorsRoute
+        } ~ pathPrefix("periodicity") {
+          periodicRequest
         }
     }
 }

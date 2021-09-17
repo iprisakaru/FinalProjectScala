@@ -71,13 +71,19 @@ class FilmsService(filmsDAO: FilmsDAO) {
     val creationOfDirectors = result.map(_.directors.get).map(_.map(name => Director(None, name))).flatMap(value => directorsService.createList(value)).map(_.map(_.map(_.id.get)))
     val creationOfLanguages = result.map(_.languageName.get).flatMap(value => languagesService.create(Language(None, value))).map(_.map(_.id.get))
 
-    val creationOfFilms = result.zip(creationOfActors.zip(creationOfGenres.zip(creationOfCountries.zip(creationOfDirectors.zip(creationOfLanguages)))))
-      .flatMap(data => {
-        createWithoutFilling(NewFilmWithId(None, data._1.name, Option(data._1.ageLimit.get), data._2._1, data._2._2._1, data._2._2._2._1, data._2._2._2._2._1, data._1.shortDescription, data._1.timing, data._1.image, data._1.releaseDate, data._1.awards, data._2._2._2._2._2, Option(false)))
-      }).flatMap(createWithoutFilling)
+    val creationOfFilms = for {
+      resultFut <- result
+      creationOfActorsFut <- creationOfActors
+      creationOfGenresFut <- creationOfGenres
+      creationOfCountriesFut <- creationOfCountries
+      creationOfDirectorsFut <- creationOfDirectors
+      creationOfLanguagesFut <- creationOfLanguages
 
+    } yield (createWithoutFilling(NewFilmWithId(None, resultFut.name, resultFut.ageLimit, creationOfActorsFut,
+      creationOfGenresFut, creationOfCountriesFut, creationOfDirectorsFut, resultFut.shortDescription,
+      resultFut.timing, resultFut.image, resultFut.releaseDate, resultFut.awards, creationOfLanguagesFut, Option(false))))
 
-    creationOfFilms
+    creationOfFilms.flatten
   }
 
   def replaceEmptyFilm(newFilm: NewFilmWithFields, filmData: Future[NewFilmWithFields]): Future[NewFilmWithFields] = {
@@ -95,12 +101,20 @@ class FilmsService(filmsDAO: FilmsDAO) {
     val imageFilled = if (newFilm.image.isEmpty) filmData.map(_.image) else Future(newFilm.image)
     val ageLimitFilled = if (newFilm.ageLimit.isEmpty) filmData.map(_.ageLimit) else Future(newFilm.ageLimit)
 
-    genresFilled.zip(actorsFilled).zip(countriesFilled).zip(directorsFilled).zip(languageFilled)
-      .zip(descriptionFilled).zip(awardsFilled).zip(timingFilled).zip(imageFilled).zip(ageLimitFilled).map(zipped =>
-      NewFilmWithFields(newFilm.name, zipped._2, zipped._1._1._1._1._1._1._1._1._2, zipped._1._1._1._1._1._1._1._1._1,
-        zipped._1._1._1._1._1._1._1._2, zipped._1._1._1._1._1._1._2, zipped._1._1._1._1._2,
-        zipped._1._1._2, zipped._1._2, newFilm.releaseDate, zipped._1._1._1._2, zipped._1._1._1._1._1._2))
-
+    for {
+      genresFilledFut <- genresFilled
+      actorsFilledFut <- actorsFilled
+      countriesFilledFut <- countriesFilled
+      directorsFilledFut <- directorsFilled
+      languageFilledFut <- languageFilled
+      descriptionFilledFut <- descriptionFilled
+      awardsFilledFut <- awardsFilled
+      timingFilledFut <- timingFilled
+      imageFilledFut <- imageFilled
+      ageLimitFilledFut <- ageLimitFilled
+    } yield (NewFilmWithFields(newFilm.name, ageLimitFilledFut, actorsFilledFut, genresFilledFut, countriesFilledFut,
+      directorsFilledFut, descriptionFilledFut, timingFilledFut, imageFilledFut,
+      newFilm.releaseDate, awardsFilledFut, languageFilledFut))
   }
 
   def getFilmByNameAndYear(filmName: String, year: Int): Future[NewFilmWithFields] = {
