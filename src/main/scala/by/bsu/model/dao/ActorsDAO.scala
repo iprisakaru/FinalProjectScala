@@ -41,26 +41,19 @@ class ActorsDAO(val config: DatabaseConfig[JdbcProfile])
 
   def insertUniq(actor: Actor): Future[Option[Actor]] = {
     LOGGER.debug(s"Inserting actor ${actor.name}")
-    db.run(createQuery(actor).asTry).map(_.toOption)
+    val result = db.run(((actors returning actors) += actor).asTry).map(_.toOption)
+    result.map(data => {
+      if (data.nonEmpty) Future(data)
+      else findByName(actor.name)
+    }).flatten
+
+  }
+
+  def insertListActor(entities: Seq[Actor]): Future[Seq[Option[Actor]]] = {
+    Future.sequence(entities.map(actor => insertUniq(actor))).map(_.filter(_.nonEmpty).map(data => Option(data.get)))
   }
 
   def deleteAll(): Future[Int] = {
     db.run(actors.delete)
-  }
-
-  private def createQuery(entity: Actor): DBIOAction[Actor, NoStream, Effect.Read with Effect.Write with Effect.Transactional] =
-
-    (for {
-      existing <- actors.filter(_.name === entity.name).result //Check, if entity exists
-      data <- if (existing.isEmpty)
-        (actors returning actors) += entity
-      else {
-        throw new Exception(s"Create failed: entity already exists")
-      }
-    } yield data).transactionally
-
-
-  def insertListActor(entities: Seq[Actor]): Future[Option[Seq[Actor]]] = {
-    db.run(DBIO.sequence(entities.map(createQuery(_))).transactionally.asTry).map(_.toOption)
   }
 }

@@ -18,7 +18,7 @@ class CountriesService(countriesDao: CountriesDAO) {
   }
 
   def createList(countryList: Seq[Country]) = {
-    countriesDao.insertListCountries(countryList)
+    countriesDao.insertListCountry(countryList)
   }
 
   def update(id: Int, country: Country) = {

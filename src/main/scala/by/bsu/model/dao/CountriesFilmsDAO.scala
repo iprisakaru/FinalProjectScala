@@ -49,21 +49,11 @@ class CountriesFilmsDAO(val config: DatabaseConfig[JdbcProfile])
     countriesFilms.filter(e => e.film_id === id).delete
   }
 
-  private def createQuery(entity: CountryFilm): DBIOAction[CountryFilm, NoStream, Effect.Read with Effect.Write with Effect.Transactional] =
-
-    (for {
-      existing <- countriesFilms.filter(data => data.country_id === entity.countryId && data.film_id === entity.filmId).result //Check, if entity exists
-      data <- if (existing.isEmpty)
-        (countriesFilms returning countriesFilms) += entity
-      else {
-        throw new Exception(s"Create failed: entity already exists")
-      }
-    } yield data).transactionally
-
   def findAll(): Future[Seq[CountryFilm]] = db.run(countriesFilms.result)
 
 
   def insertListCountryFilm(entities: Seq[CountryFilm]) = {
-    db.run(DBIO.sequence(entities.map(createQuery(_))).transactionally.asTry).map(_.toOption)
+    db.run(DBIO.sequence(entities.map(entity =>
+      ((countriesFilms returning countriesFilms) += entity))).transactionally.asTry).map(_.toOption)
   }
 }

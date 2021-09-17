@@ -41,28 +41,22 @@ class LanguagesDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(languages.filter(_.name === name).result.headOption)
   }
 
-  def insertUniq(language: Language): Future[Option[Language]] = {
-    LOGGER.debug(s"Inserting language ${language.name}")
-    db.run(createQuery(language).asTry).map(_.toOption)
+  def insertUniq(entity: Language) = {
+    LOGGER.debug(s"Inserting admin ${entity.name}")
+    val result = db.run(((languages returning languages) += entity).asTry).map(_.toOption)
+    result.map(data => {
+      if (data.nonEmpty) Future(data)
+      else findByName(entity.name)
+    }).flatten
+
+  }
+
+  def insertListLanguages(entities: Seq[Language]) = {
+    Future.sequence(entities.map(entity => insertUniq(entity))).map(_.filter(_.nonEmpty).map(data => Option(data.get)))
   }
 
   def deleteAll(): Future[Int] = {
     db.run(languages.delete)
-  }
-
-  private def createQuery(entity: Language): DBIOAction[Language, NoStream, Effect.Read with Effect.Write with Effect.Transactional] =
-    (for {
-      existing <- languages.filter(_.name === entity.name).result //Check, if entity exists
-      data <- if (existing.isEmpty)
-        (languages returning languages) += entity
-      else {
-        throw new Exception(s"Create failed: entity already exists")
-      }
-    } yield data).transactionally
-
-
-  def insertListLanguages(entities: Seq[Language]) = {
-    db.run(DBIO.sequence(entities.map(createQuery(_))).transactionally.asTry).map(_.toOption)
   }
 
 

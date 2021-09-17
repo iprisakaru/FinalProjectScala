@@ -39,28 +39,21 @@ class GenresDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(genres.filter(_.name === name).result.headOption)
   }
 
-  def insertUniq(genre: Genre): Future[Option[Genre]] = {
-    LOGGER.debug(s"Inserting genre ${genre.name}")
-    db.run(createQuery(genre).asTry).map(_.toOption)
+  def insertUniq(entity: Genre) = {
+    LOGGER.debug(s"Inserting admin ${entity.name}")
+    val result = db.run(((genres returning genres) += entity).asTry).map(_.toOption)
+    result.map(data => {
+      if (data.nonEmpty) Future(data)
+      else findByName(entity.name)
+    }).flatten
+
+  }
+
+  def insertListGenres(entities: Seq[Genre]) = {
+    Future.sequence(entities.map(entity => insertUniq(entity))).map(_.filter(_.nonEmpty).map(data => Option(data.get)))
   }
 
   def deleteAll(): Future[Int] = {
     db.run(genres.delete)
-  }
-
-  private def createQuery(entity: Genre): DBIOAction[Genre, NoStream, Effect.Read with Effect.Write with Effect.Transactional] =
-
-    (for {
-      existing <- genres.filter(_.name === entity.name).result //Check, if entity exists
-      data <- if (existing.isEmpty)
-        (genres returning genres) += entity
-      else {
-        throw new Exception(s"Create failed: entity already exists")
-      }
-    } yield data).transactionally
-
-
-  def insertListGenres(entities: Seq[Genre]) = {
-    db.run(DBIO.sequence(entities.map(createQuery(_))).transactionally.asTry).map(_.toOption)
   }
 }

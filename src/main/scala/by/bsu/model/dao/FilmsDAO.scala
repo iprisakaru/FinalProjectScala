@@ -7,7 +7,8 @@ import org.apache.log4j.Logger
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
 
 class FilmsDAO(override val config: DatabaseConfig[JdbcProfile])
@@ -50,7 +51,7 @@ class FilmsDAO(override val config: DatabaseConfig[JdbcProfile])
       .map(_.flatten).map(_.map(_.map(_.genreId)))
 
     val directorsListForInsertion = HelpFunctions.fOption(film.directorsId.map(_.map(data =>
-      DirectorFilm(None, data, film.id.get))).map(directorsFilmsDAO.insertListDirectorsFilm))
+      DirectorFilm(None, data, film.id.get))).map(directorsFilmsDAO.insertListDirectorFilm))
       .map(_.flatten).map(_.map(_.map(_.directorId)))
 
     val countriesListForInsertion = HelpFunctions.fOption(film.countriesId.map(_.map(data =>

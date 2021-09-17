@@ -8,6 +8,7 @@ import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Future
 import scala.language.postfixOps
+import scala.util.Try
 
 class ActorsFilmsDAO(val config: DatabaseConfig[JdbcProfile])
   extends Db with ActorsFilmsTable with ActorsTable with FilmsTable {
@@ -42,23 +43,12 @@ class ActorsFilmsDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(actorsFilms.result)
   }
 
-  def deleteByFilmIdQuery(id: Long)={
+  def deleteByFilmIdQuery(id: Long) = {
     actorsFilms.filter(e => e.film_id === id).delete
   }
 
-  private def createQuery(entity: ActorFilm): DBIOAction[ActorFilm, NoStream, Effect.Read with Effect.Write with Effect.Transactional] =
-
-    (for {
-      existing <- actorsFilms.filter(data => data.actor_id === entity.actorId && data.film_id === entity.filmId).result //Check, if entity exists
-      data <- if (existing.isEmpty)
-        (actorsFilms returning actorsFilms) += entity
-      else {
-        throw new Exception(s"Create failed: entity already exists")
-      }
-    } yield data).transactionally
-
 
   def insertListActorFilm(entities: Seq[ActorFilm]) = {
-    db.run(DBIO.sequence(entities.map(createQuery(_))).transactionally.asTry).map(_.toOption)
+    db.run(DBIO.sequence(entities.map(entity => (actorsFilms returning actorsFilms) += entity)).asTry).map(_.toOption)
   }
 }

@@ -45,24 +45,17 @@ class DirectorsDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(directors.filter(_.name === name).result.headOption)
   }
 
-  def insertUniq(director: Director): Future[Option[Director]] = {
-    LOGGER.debug(s"Inserting director ${director.name}")
-    db.run(createQuery(director).asTry).map(_.toOption)
-  }
-
-  private def createQuery(entity: Director): DBIOAction[Director, NoStream, Effect.Read with Effect.Write with Effect.Transactional] = {
-    (for {
-      existing <- directors.filter(_.name === entity.name).result //Check, if entity exists
-      data <- if (existing.isEmpty)
-        (directors returning directors) += entity
-      else {
-        throw new Exception(s"Create failed: entity already exists")
-      }
-    } yield (data)).transactionally
+  def insertUniq(entity: Director) = {
+    LOGGER.debug(s"Inserting admin ${entity.name}")
+    val result = db.run(((directors returning directors) += entity).asTry).map(_.toOption)
+    result.map(data => {
+      if (data.nonEmpty) Future(data)
+      else findByName(entity.name)
+    }).flatten
 
   }
 
   def insertListDirectors(entities: Seq[Director]) = {
-    db.run(DBIO.sequence(entities.map(createQuery(_))).transactionally.asTry).map(_.toOption)
+    Future.sequence(entities.map(entity => insertUniq(entity))).map(_.filter(_.nonEmpty).map(data => Option(data.get)))
   }
 }

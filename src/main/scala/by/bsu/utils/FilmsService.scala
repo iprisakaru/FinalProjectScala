@@ -7,7 +7,9 @@ import by.bsu.web.api.UpdatingDataController
 import org.apache.log4j.Logger
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, Future}
+import scala.language.postfixOps
 
 class FilmsService(filmsDAO: FilmsDAO) {
 
@@ -73,15 +75,16 @@ class FilmsService(filmsDAO: FilmsDAO) {
 
     val creationOfFilms = for {
       resultFut <- result
-      creationOfActorsFut <- creationOfActors
-      creationOfGenresFut <- creationOfGenres
-      creationOfCountriesFut <- creationOfCountries
-      creationOfDirectorsFut <- creationOfDirectors
+      creationOfActorsFut <- creationOfActors.filter(_.nonEmpty).map(data => Option(data.map(_.get)))
+      creationOfGenresFut <- creationOfGenres.filter(_.nonEmpty).map(data => Option(data.map(_.get)))
+      creationOfCountriesFut <- creationOfCountries.filter(_.nonEmpty).map(data => Option(data.map(_.get)))
+      creationOfDirectorsFut <- creationOfDirectors.filter(_.nonEmpty).map(data => Option(data.map(_.get)))
       creationOfLanguagesFut <- creationOfLanguages
 
     } yield (createWithoutFilling(NewFilmWithId(None, resultFut.name, resultFut.ageLimit, creationOfActorsFut,
       creationOfGenresFut, creationOfCountriesFut, creationOfDirectorsFut, resultFut.shortDescription,
       resultFut.timing, resultFut.image, resultFut.releaseDate, resultFut.awards, creationOfLanguagesFut, Option(false))))
+
 
     creationOfFilms.flatten
   }

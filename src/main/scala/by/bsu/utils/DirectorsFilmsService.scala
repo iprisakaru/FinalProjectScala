@@ -12,12 +12,8 @@ class DirectorsFilmsService(directorsFilmsDAO: DirectorsFilmsDAO) {
     directorsFilmsDAO.findAll()
   }
 
-  def create(directorFilm: DirectorFilm) = {
-    directorsFilmsDAO.insertDirectorFilm(directorFilm)
-  }
-
   def createList(directorsFilmList: Seq[DirectorFilm]) = {
-    directorsFilmsDAO.insertListDirectorsFilm(directorsFilmList)
+    directorsFilmsDAO.insertListDirectorFilm(directorsFilmList)
   }
 
   def deleteById(directorsId: Int, filmId: Long) = {

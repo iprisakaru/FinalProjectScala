@@ -12,10 +12,6 @@ class GenresFilmsService(genresFilmsDAO: GenresFilmsDAO) {
     genresFilmsDAO.findAll()
   }
 
-  def create(genreFilm: GenreFilm) = {
-    genresFilmsDAO.insertGenresFilms(genreFilm)
-  }
-
   def createList(genreFilmList: Seq[GenreFilm]) = {
     genresFilmsDAO.insertListGenresFilm(genreFilmList)
   }

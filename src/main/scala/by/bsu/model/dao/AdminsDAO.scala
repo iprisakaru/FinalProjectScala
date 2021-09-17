@@ -18,27 +18,20 @@ class AdminsDAO(val config: DatabaseConfig[JdbcProfile])
 
   val LOGGER = Logger.getLogger(this.getClass.getName)
 
-  def insertUniq(admin: Admin): Future[Option[Admin]] = {
-    LOGGER.debug(s"Inserting admin ${admin.username}")
-    db.run(createQuery(admin).asTry).map(_.toOption)
-  }
-
-  def insert(admin: Admin): Future[Admin] = {
-    db.run(admins returning admins.map(_.admin_id) += admin)
-      .map(id => admin.copy(id = Option(id)))
-  }
-
-  private def createQuery(entity: Admin): DBIOAction[Admin, NoStream, Effect.Read with Effect.Write with Effect.Transactional] = {
-    (for {
-      existing <- admins.filter(_.username === entity.username).result //Check, if entity exists
-      data <- if (existing.isEmpty)
-        (admins returning admins) += entity
-      else {
-        throw new Exception(s"Create failed: entity already exists")
-      }
-    } yield (data)).transactionally
+  def insertUniq(entity: Admin) = {
+    LOGGER.debug(s"Inserting admin ${entity.username}")
+    val result = db.run(((admins returning admins) += entity).asTry).map(_.toOption)
+    result.map(data => {
+      if (data.nonEmpty) Future(data)
+      else findByName(entity.username)
+    }).flatten
 
   }
+
+  def insertListActor(entities: Seq[Admin]) = {
+    Future.sequence(entities.map(entity => insertUniq(entity))).map(_.filter(_.nonEmpty).map(data => Option(data.get)))
+  }
+
 
   def getPassword(username: String): Future[Admin] = {
     db.run(admins.filter(data => (data.username === username)).result.head)

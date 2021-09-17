@@ -6,7 +6,6 @@ import akka.http.scaladsl.server.Route
 import by.bsu.Application.LOGGER
 import by.bsu.model.repository.{Film, NewFilmWithFields, NewFilmWithId}
 import by.bsu.utils.RouteService.filmsService
-import by.bsu.web.api.auth.HTTPBasicAuth
 import spray.json.{DefaultJsonProtocol, RootJsonFormat, enrichAny}
 
 import scala.concurrent.ExecutionContext.Implicits.global

@@ -12,7 +12,7 @@ class AdminsService(adminsDAO: AdminsDAO) {
   }
 
   def create(admin: Admin) = {
-    adminsDAO.insert(admin.copy(password = admin.password.bcrypt))
+    adminsDAO.insertUniq(admin.copy(password = admin.password.bcrypt))
   }
 
 }

@@ -39,25 +39,18 @@ class CountriesDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(countries.filter(_.name === name).result.headOption)
   }
 
-  def insertUniq(country: Country): Future[Option[Country]] = {
-    LOGGER.debug(s"Inserting country ${country.name}")
-    db.run(createQuery(country).asTry).map(_.toOption)
+  def insertUniq(entity: Country) = {
+    LOGGER.debug(s"Inserting admin ${entity.name}")
+    val result = db.run(((countries returning countries) += entity).asTry).map(_.toOption)
+    result.map(data => {
+      if (data.nonEmpty) Future(data)
+      else findByName(entity.name)
+    }).flatten
+
   }
 
-  private def createQuery(entity: Country): DBIOAction[Country, NoStream, Effect.Read with Effect.Write with Effect.Transactional] =
-
-    (for {
-      existing <- countries.filter(_.name === entity.name).result //Check, if entity exists
-      data <- if (existing.isEmpty)
-        (countries returning countries) += entity
-      else {
-        throw new Exception(s"Create failed: entity already exists")
-      }
-    } yield data).transactionally
-
-
-  def insertListCountries(entities: Seq[Country]) = {
-    db.run(DBIO.sequence(entities.map(createQuery(_))).transactionally.asTry).map(_.toOption)
+  def insertListCountry(entities: Seq[Country]) = {
+    Future.sequence(entities.map(entity => insertUniq(entity))).map(_.filter(_.nonEmpty).map(data => Option(data.get)))
   }
 
   def deleteAll(): Future[Int] = {

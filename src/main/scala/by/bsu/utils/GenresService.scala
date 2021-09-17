@@ -47,7 +47,7 @@ class GenresService(genresDao: GenresDAO) {
       Future.sequence(fut.map(tmp => Future.sequence(tmp.genres.map(genre =>
         create(Genre(None, genre.name))))))).map(_.head).map(_.count(_.nonEmpty))
 
-    result.map(num=>LOGGER.debug(s"$num new genres were updated"))
+    result.map(num => LOGGER.debug(s"$num new genres were updated"))
 
     result
   }
