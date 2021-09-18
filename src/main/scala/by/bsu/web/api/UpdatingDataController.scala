@@ -5,7 +5,6 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.coding.Gzip
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest}
 import by.bsu.Application.configData
-import by.bsu.utils.HelpFunctions
 import by.bsu.utils.HelpFunctions.isEnglish
 import org.apache.log4j.Logger
 import spray.json.{DefaultJsonProtocol, NullOptions, RootJsonFormat, _}

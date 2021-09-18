@@ -1,22 +1,25 @@
 package by.bsu.model.dao
 
-import by.bsu.model.Db
 import by.bsu.model.repository.{Actor, ActorsTable}
-import by.bsu.utils.HelpFunctions
+import org.apache.log4j.Logger
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Future
-import scala.util.Try
 
 class ActorsDAO(val config: DatabaseConfig[JdbcProfile])
-  extends Db with ActorsTable {
+  extends BaseDAO with ActorsTable {
+
+  override type T = Actor
 
   import config.driver.api._
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
+  val LOGGER = Logger.getLogger(this.getClass.getName)
+
   def update(id: Int, actor: Actor): Future[Int] = {
+    LOGGER.debug(s"Updating actor $id id")
     db.run(actors.filter(_.actor_id === id).map(customer => (customer.name))
       .update(actor.name))
   }
@@ -37,27 +40,22 @@ class ActorsDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(actors.filter(_.name === name).result.headOption)
   }
 
-  def insertUniq(actor: Actor): Future[Option[Actor]] = {
-    db.run(createQuery(actor).asTry).map(_.toOption)
+
+  def insert(actor: Actor): Future[Option[Actor]] = {
+    LOGGER.debug(s"Inserting actor ${actor.name}")
+    val result = db.run(((actors returning actors) += actor).asTry).map(_.toOption)
+    result.map(data => {
+      if (data.nonEmpty) Future(data)
+      else findByName(actor.name)
+    }).flatten
+  }
+
+  def insertList(entities: Seq[Actor]): Future[Seq[Option[Actor]]] = {
+    Future.sequence(entities.map(actor => insert(actor))).map(_.filter(_.nonEmpty).map(data => Option(data.get)))
   }
 
   def deleteAll(): Future[Int] = {
     db.run(actors.delete)
   }
 
-  private def createQuery(entity: Actor): DBIOAction[Actor, NoStream, Effect.Read with Effect.Write with Effect.Transactional] =
-
-    (for {
-      existing <- actors.filter(e => e.name === entity.name).result //Check, if entity exists
-      e <- if (existing.isEmpty)
-        (actors returning actors) += entity
-      else {
-        throw new Exception(s"Create failed: entity already exists")
-      }
-    } yield e).transactionally
-
-
-  def insertListActor(entities: Seq[Actor]): Future[Option[Seq[Actor]]] = {
-    db.run(DBIO.sequence(entities.map(createQuery(_))).transactionally.asTry).map(_.toOption)
-  }
 }

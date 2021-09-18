@@ -5,7 +5,6 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import by.bsu.Application.LOGGER
 import by.bsu.model.repository.Country
-import by.bsu.utils.RouteService
 import by.bsu.utils.RouteService.countriesService
 import spray.json.{DefaultJsonProtocol, RootJsonFormat, enrichAny}
 
@@ -46,6 +45,7 @@ trait CountriesApi extends CountriesJsonMapping {
       }
       }
     }
+
   }
 
 }

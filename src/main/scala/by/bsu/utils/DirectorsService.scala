@@ -3,6 +3,8 @@ package by.bsu.utils
 import by.bsu.model.dao.DirectorsDAO
 import by.bsu.model.repository.Director
 
+import scala.concurrent.Future
+
 class DirectorsService(directorsDao: DirectorsDAO) {
 
   def getById(id: Int) = {
@@ -13,12 +15,12 @@ class DirectorsService(directorsDao: DirectorsDAO) {
     directorsDao.findAll()
   }
 
-  def create(country: Director) = {
-    directorsDao.insertUniq(country)
+  def create(country: Director): Future[Option[Director]] = {
+    directorsDao.insert(country)
   }
 
-  def createList(directorsFilmList: Seq[Director]) = {
-    directorsDao.insertListDirectors(directorsFilmList)
+  def createList(directorsFilmList: Seq[Director]): Future[Seq[Option[Director]]] = {
+    directorsDao.insertList(directorsFilmList)
   }
 
   def update(id: Int, director: Director) = {

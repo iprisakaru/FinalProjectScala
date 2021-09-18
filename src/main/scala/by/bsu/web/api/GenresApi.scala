@@ -5,8 +5,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import by.bsu.Application.LOGGER
 import by.bsu.model.repository.Genre
-import by.bsu.utils.RouteService
-import by.bsu.utils.RouteService.{filmsService, genresService}
+import by.bsu.utils.RouteService.genresService
 import spray.json.{DefaultJsonProtocol, RootJsonFormat, enrichAny}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -40,18 +39,20 @@ trait GenresApi extends GenresJsonMapping {
         complete(genresService.deleteById(id).map(_.toJson))
       }
       } ~ post {
-        entity(as[Genre]) { entity => {
-          LOGGER.debug(s"Creating a new film with ${entity.id} id")
-          complete(genresService.create(entity).map(_.toJson))
-        }
-        }
+      entity(as[Genre]) { entity => {
+        LOGGER.debug(s"Creating a new film with ${entity.id} id")
+        complete(genresService.create(entity).map(_.toJson))
       }
+      }
+    }
   }
 
-  val updateGenres = {
-    post{
-      val r = genresService.getGenresFromApi.map(_.map(_.toJson))
-      complete(r)
+  val periodicRequest: Route = {
+    post {
+      path("genre") {
+        LOGGER.debug("Running everyday genre update")
+        complete(genresService.getGenresFromApi.map(_.toJson))
+      }
     }
   }
 

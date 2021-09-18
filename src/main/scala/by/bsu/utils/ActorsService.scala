@@ -1,9 +1,7 @@
 package by.bsu.utils
 
 import by.bsu.model.dao.ActorsDAO
-import by.bsu.model.repository.{Actor, NewFilmWithFields}
-
-import scala.concurrent.Future
+import by.bsu.model.repository.Actor
 
 class ActorsService(actorsDao: ActorsDAO) {
 
@@ -16,11 +14,11 @@ class ActorsService(actorsDao: ActorsDAO) {
   }
 
   def create(country: Actor) = {
-    actorsDao.insertUniq(country)
+    actorsDao.insert(country)
   }
 
   def createList(actorsList: Seq[Actor]) = {
-    actorsDao.insertListActor(actorsList)
+    actorsDao.insertList(actorsList)
   }
 
   def update(id: Int, country: Actor) = {

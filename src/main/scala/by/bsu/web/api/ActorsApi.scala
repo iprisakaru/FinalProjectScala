@@ -5,7 +5,6 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import by.bsu.Application.LOGGER
 import by.bsu.model.repository.Actor
-import by.bsu.utils.RouteService
 import by.bsu.utils.RouteService.actorsService
 import spray.json.{DefaultJsonProtocol, RootJsonFormat, enrichAny}
 
@@ -17,7 +16,8 @@ trait ActorsJsonMapping extends DefaultJsonProtocol {
 
 }
 
-trait ActorsApi extends ActorsJsonMapping  {
+trait ActorsApi extends ActorsJsonMapping {
+
   val actorsRoute: Route = {
     (path(IntNumber) & get) { id => {
       LOGGER.debug(s"Getting genre with $id id")
@@ -45,6 +45,7 @@ trait ActorsApi extends ActorsJsonMapping  {
         complete(actorsService.create(entity).map(_.toJson))
       }
       }
+
     }
   }
 

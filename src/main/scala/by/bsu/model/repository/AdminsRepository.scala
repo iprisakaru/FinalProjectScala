@@ -2,7 +2,7 @@ package by.bsu.model.repository
 
 import by.bsu.model.Db
 
-case class Admin(id: Option[Int], code: String)
+case class Admin(id: Option[Int], username: String, password: String)
 
 trait AdminsTable {
   this: Db =>
@@ -10,11 +10,13 @@ trait AdminsTable {
   import config.driver.api._
 
   class Admins(tag: Tag) extends Table[Admin](tag, "admins") {
-    def admin_id = column[Int]("actor_id", O.PrimaryKey, O.AutoInc)
+    def admin_id = column[Int]("admin_id", O.PrimaryKey, O.AutoInc)
 
-    def code = column[String]("code")
+    def username = column[String]("username")
 
-    def * = (admin_id.?, code) <> (Admin.tupled, Admin.unapply)
+    def password = column[String]("password")
+
+    def * = (admin_id.?, username, password) <> (Admin.tupled, Admin.unapply)
   }
 
   val admins = TableQuery[Admins]

@@ -1,21 +1,26 @@
 package by.bsu.model.dao
 
-import by.bsu.model.repository.{CountriesTable, Country}
 import by.bsu.model.Db
-import by.bsu.utils.HelpFunctions
+import by.bsu.model.repository.{CountriesTable, Country}
+import org.apache.log4j.Logger
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Future
-import scala.util.Try
 
 class CountriesDAO(val config: DatabaseConfig[JdbcProfile])
-  extends Db with CountriesTable  {
+  extends BaseDAO with CountriesTable {
 
   import config.driver.api._
+
   import scala.concurrent.ExecutionContext.Implicits.global
 
+  override type T = Country
+
+  val LOGGER = Logger.getLogger(this.getClass.getName)
+
   def update(id: Int, country: Country): Future[Int] = {
+    LOGGER.debug(s"Updating country $id id")
     db.run(countries.filter(_.country_id === id).map(customer => (customer.name))
       .update(country.name))
   }
@@ -36,24 +41,19 @@ class CountriesDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(countries.filter(_.name === name).result.headOption)
   }
 
-  def insertUniq(country: Country): Future[Option[Country]] = {
-    db.run(createQuery(country).asTry).map(_.toOption)
+  def insert(entity: Country) = {
+    LOGGER.debug(s"Inserting country ${entity.name}")
+    val result = db.run(((countries returning countries) += entity).asTry).map(_.toOption)
+    result.map(data => {
+      if (data.nonEmpty) Future(data)
+      else findByName(entity.name)
+    }).flatten
+
   }
 
-  private def createQuery(entity: Country): DBIOAction[Country, NoStream, Effect.Read with Effect.Write with Effect.Transactional] =
-
-    (for {
-      existing <- countries.filter(e => e.name === entity.name).result //Check, if entity exists
-      e <- if (existing.isEmpty)
-        (countries returning countries) += entity
-      else {
-        throw new Exception(s"Create failed: entity already exists")
-      }
-    } yield e).transactionally
-
-
-  def insertListCountries(entities: Seq[Country])= {
-    db.run(DBIO.sequence(entities.map(createQuery(_))).transactionally.asTry).map(_.toOption)
+  def insertList(entities: Seq[Country]) = {
+    Future.sequence(entities.map(entity => insert(entity)))
+      .map(_.filter(_.nonEmpty).map(data => Option(data.get)))
   }
 
   def deleteAll(): Future[Int] = {

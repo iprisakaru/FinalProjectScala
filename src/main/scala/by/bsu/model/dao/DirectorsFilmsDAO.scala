@@ -17,10 +17,8 @@ class DirectorsFilmsDAO(val config: DatabaseConfig[JdbcProfile])
 
   def findAll(): Future[Seq[DirectorFilm]] = db.run(directorsFilms.result)
 
-
-  def insertDirectorFilm(actorFilm: DirectorFilm): Future[Long] = {
-    db.run((directorsFilms returning directorsFilms.map(_.director_film_id) += actorFilm))
-      .map(id => actorFilm.copy(id)).map(_.directorFilmId.get)
+  def insertListDirectorFilm(entities: Seq[DirectorFilm]) = {
+    db.run(DBIO.sequence(entities.map(entity => (directorsFilms returning directorsFilms) += entity)).asTry).map(_.toOption)
   }
 
 
@@ -28,6 +26,10 @@ class DirectorsFilmsDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(directorsFilms.filter(data => (data.director_id === directorId) && (data.film_id === filmId)).delete) map {
       _ > 0
     }
+  }
+
+  def deleteByFilmIdQuery(id: Long) = {
+    directorsFilms.filter(e => e.film_id === id).delete
   }
 
   def deleteAll(): Future[Int] = {
@@ -38,26 +40,4 @@ class DirectorsFilmsDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(directorsFilms.filter(data => (data.director_id === directorId && data.film_id === filmId)).result.headOption.map(_.get.directorFilmId))
   }
 
-  def insertUniq(directorFilm: DirectorFilm): Future[Long] = {
-    db.run(directorsFilms.filter(data => (data.director_id === directorFilm.directorId && data.film_id === directorFilm.filmId)).result).map(_.nonEmpty).map(isNotUniq => {
-      if (isNotUniq) findByName(directorFilm.directorId, directorFilm.filmId).map(_.get)
-      else insertDirectorFilm(directorFilm)
-    }).flatten
-  }
-
-  private def createQuery(entity: DirectorFilm): DBIOAction[DirectorFilm, NoStream, Effect.Read with Effect.Write with Effect.Transactional] =
-
-    (for {
-      existing <- directorsFilms.filter(e => e.director_id === entity.directorId && e.film_id === entity.filmId).result //Check, if entity exists
-      e <- if (existing.isEmpty)
-        (directorsFilms returning directorsFilms) += entity
-      else {
-        throw new Exception(s"Create failed: entity already exists")
-      }
-    } yield e).transactionally
-
-
-  def insertListDirectorsFilm(entities: Seq[DirectorFilm])= {
-    db.run(DBIO.sequence(entities.map(createQuery(_))).transactionally.asTry).map(_.toOption)
-  }
 }

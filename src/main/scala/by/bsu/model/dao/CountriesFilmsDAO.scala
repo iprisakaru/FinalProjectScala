@@ -2,6 +2,7 @@ package by.bsu.model.dao
 
 import by.bsu.model.Db
 import by.bsu.model.repository.{CountriesFilmsTable, CountriesTable, CountryFilm, FilmsTable}
+import org.apache.log4j.Logger
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
@@ -14,6 +15,8 @@ class CountriesFilmsDAO(val config: DatabaseConfig[JdbcProfile])
   import config.driver.api._
 
   import scala.concurrent.ExecutionContext.Implicits.global
+
+  val LOGGER = Logger.getLogger(this.getClass.getName)
 
   def insertCountryFilm(countryFilm: CountryFilm): Future[Long] = {
     db.run((countriesFilms returning countriesFilms.map(_.country_film_id) += countryFilm))
@@ -42,21 +45,15 @@ class CountriesFilmsDAO(val config: DatabaseConfig[JdbcProfile])
     }).flatten
   }
 
-  private def createQuery(entity: CountryFilm): DBIOAction[CountryFilm, NoStream, Effect.Read with Effect.Write with Effect.Transactional] =
-
-    (for {
-      existing <- countriesFilms.filter(e => e.country_id === entity.countryId && e.film_id === entity.filmId).result //Check, if entity exists
-      e <- if (existing.isEmpty)
-        (countriesFilms returning countriesFilms) += entity
-      else {
-        throw new Exception(s"Create failed: entity already exists")
-      }
-    } yield e).transactionally
+  def deleteByFilmIdQuery(id: Long) = {
+    countriesFilms.filter(e => e.film_id === id).delete
+  }
 
   def findAll(): Future[Seq[CountryFilm]] = db.run(countriesFilms.result)
 
 
-  def insertListCountryFilm(entities: Seq[CountryFilm])= {
-    db.run(DBIO.sequence(entities.map(createQuery(_))).transactionally.asTry).map(_.toOption)
+  def insertListCountryFilm(entities: Seq[CountryFilm]) = {
+    db.run(DBIO.sequence(entities.map(entity =>
+      ((countriesFilms returning countriesFilms) += entity))).transactionally.asTry).map(_.toOption)
   }
 }

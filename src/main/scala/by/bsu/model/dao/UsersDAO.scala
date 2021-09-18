@@ -3,25 +3,35 @@ package by.bsu.model.dao
 import by.bsu.model.Db
 import by.bsu.model.repository.{User, UsersTable}
 import by.bsu.utils.HelpFunctions
+import org.apache.log4j.Logger
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Future
 
 class UsersDAO(val config: DatabaseConfig[JdbcProfile])
-  extends Db with UsersTable {
+  extends BaseDAO with UsersTable {
 
   import config.driver.api._
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  def insert(user: User): Future[User] = {
-    db.run(users returning users.map(_.user_id) += user)
-      .map(id => user.copy(id = Option(id)))
+  val LOGGER = Logger.getLogger(this.getClass.getName)
+
+  override type T = User
+
+  def insert(user: User): Future[Option[User]] = {
+    LOGGER.debug(s"Inserting user ${user.code}")
+    val result = db.run(((users returning users) += user).asTry).map(_.toOption)
+    result.map(data => {
+      if (data.nonEmpty) Future(data)
+      else findByName(user.code)
+    }).flatten
   }
 
 
   def update(id: Int, user: User): Future[Int] = {
+    LOGGER.debug(s"Updating user $id id")
     db.run(users.filter(_.user_id === id).map(customer => (customer.code))
       .update(user.code))
   }
@@ -46,4 +56,6 @@ class UsersDAO(val config: DatabaseConfig[JdbcProfile])
   def deleteAll(): Future[Int] = {
     db.run(users.delete)
   }
+
+  override def insertList(entities: Seq[User]): Future[Seq[Option[User]]] = ???
 }

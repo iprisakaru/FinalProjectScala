@@ -19,21 +19,26 @@ trait FilmJsonMapping extends DefaultJsonProtocol {
 
 trait FilmsApi extends FilmJsonMapping {
   val filmRoute: Route = {
-    (path(IntNumber) & get) { id => {
-      LOGGER.debug(s"Getting films with $id id")
-      complete(filmsService.getById(id).map(_.toJson))
-    }
+    delete {
+      (path(IntNumber)) { id => {
+        LOGGER.debug(s"Deleting a film with $id id")
+        complete(filmsService.deleteById(id).map(_.toJson))
+      }
+      }
     } ~
       get {
-        LOGGER.debug("Getting all films")
-        complete(filmsService.getAll().map(_.toJson))
-      } ~
-      post {
-        entity(as[NewFilmWithId]) { entity => {
-          LOGGER.debug(s"Creating a new film with ${entity.id} id")
-          complete(filmsService.createWithoutFilling(entity).map(_.toJson))
-        }
-        }
+        path("private") {
+          LOGGER.debug("Getting all private films")
+          complete(filmsService.getAllPrivate())
+        } ~ {
+          LOGGER.debug("Getting all public films")
+          complete(filmsService.getAllPublic().map(_.toJson))
+        } ~
+          (path(IntNumber)) { id => {
+            LOGGER.debug(s"Getting films with $id id")
+            complete(filmsService.getById(id).map(_.toJson))
+          }
+          }
       } ~
       (path(IntNumber) & put) { id =>
         entity(as[Film]) { entity => {
@@ -42,21 +47,35 @@ trait FilmsApi extends FilmJsonMapping {
         }
         }
       } ~
-      (path(IntNumber) & delete) { id => {
-        LOGGER.debug(s"Deleting a film with $id id")
-        complete(filmsService.deleteById(id).map(_.toJson))
-      }
+      post {
+        path("help") {
+          filmHelpRoute
+        } ~
+          entity(as[NewFilmWithId]) { entity => {
+            LOGGER.debug(s"Creating a new film with ${entity.id} id")
+            complete(filmsService.createWithoutFilling(entity).map(_.toJson))
+          }
+          }
+      } ~
+      put {
+        path("public" / IntNumber) {
+          id =>
+            LOGGER.debug(s"Making film $id id public")
+            complete(filmsService.makePublic(id).map(_.toJson))
+        }
       }
 
   }
 
   val filmHelpRoute: Route = {
+
     post {
       entity(as[NewFilmWithFields]) { customer => {
         complete(filmsService.createFilmWithFilling(customer).map(_.toJson))
       }
       }
     }
+
   }
 
 
