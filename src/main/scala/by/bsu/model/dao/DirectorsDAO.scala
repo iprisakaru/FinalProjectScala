@@ -11,11 +11,13 @@ import scala.concurrent.Future
 import scala.util.Try
 
 class DirectorsDAO(val config: DatabaseConfig[JdbcProfile])
-  extends Db with DirectorsTable {
+  extends BaseDAO with DirectorsTable {
 
   import config.driver.api._
 
   import scala.concurrent.ExecutionContext.Implicits.global
+
+  override type T = Director
 
   val LOGGER = Logger.getLogger(this.getClass.getName)
 
@@ -45,7 +47,7 @@ class DirectorsDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(directors.filter(_.name === name).result.headOption)
   }
 
-  def insertUniq(entity: Director) = {
+  def insert(entity: Director) = {
     LOGGER.debug(s"Inserting admin ${entity.name}")
     val result = db.run(((directors returning directors) += entity).asTry).map(_.toOption)
     result.map(data => {
@@ -55,7 +57,7 @@ class DirectorsDAO(val config: DatabaseConfig[JdbcProfile])
 
   }
 
-  def insertListDirectors(entities: Seq[Director]) = {
-    Future.sequence(entities.map(entity => insertUniq(entity))).map(_.filter(_.nonEmpty).map(data => Option(data.get)))
+  def insertList(entities: Seq[Director]) = {
+    Future.sequence(entities.map(entity => insert(entity))).map(_.filter(_.nonEmpty).map(data => Option(data.get)))
   }
 }

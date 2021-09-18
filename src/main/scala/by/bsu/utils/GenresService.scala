@@ -23,7 +23,7 @@ class GenresService(genresDao: GenresDAO) {
   }
 
   def create(genre: Genre) = {
-    genresDao.insertUniq(genre)
+    genresDao.insert(genre)
   }
 
   def update(id: Int, genre: Genre) = {
@@ -31,7 +31,7 @@ class GenresService(genresDao: GenresDAO) {
   }
 
   def createList(genresList: Seq[Genre]) = {
-    genresDao.insertListGenres(genresList)
+    genresDao.insertList(genresList)
   }
 
   def deleteById(id: Int) = {

@@ -9,11 +9,13 @@ import slick.jdbc.JdbcProfile
 import scala.concurrent.Future
 
 class CountriesDAO(val config: DatabaseConfig[JdbcProfile])
-  extends Db with CountriesTable {
+  extends BaseDAO with CountriesTable {
 
   import config.driver.api._
 
   import scala.concurrent.ExecutionContext.Implicits.global
+
+  override type T = Country
 
   val LOGGER = Logger.getLogger(this.getClass.getName)
 
@@ -39,8 +41,8 @@ class CountriesDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(countries.filter(_.name === name).result.headOption)
   }
 
-  def insertUniq(entity: Country) = {
-    LOGGER.debug(s"Inserting admin ${entity.name}")
+  def insert(entity: Country) = {
+    LOGGER.debug(s"Inserting country ${entity.name}")
     val result = db.run(((countries returning countries) += entity).asTry).map(_.toOption)
     result.map(data => {
       if (data.nonEmpty) Future(data)
@@ -49,8 +51,9 @@ class CountriesDAO(val config: DatabaseConfig[JdbcProfile])
 
   }
 
-  def insertListCountry(entities: Seq[Country]) = {
-    Future.sequence(entities.map(entity => insertUniq(entity))).map(_.filter(_.nonEmpty).map(data => Option(data.get)))
+  def insertList(entities: Seq[Country]) = {
+    Future.sequence(entities.map(entity => insert(entity)))
+      .map(_.filter(_.nonEmpty).map(data => Option(data.get)))
   }
 
   def deleteAll(): Future[Int] = {

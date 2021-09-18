@@ -1,6 +1,6 @@
 package by.bsu.utils
 
-import by.bsu.model.dao.FilmsDAO
+import by.bsu.model.dao._
 import by.bsu.model.repository._
 import by.bsu.utils.RouteService._
 import by.bsu.web.api.UpdatingDataController
@@ -17,10 +17,10 @@ class FilmsService(filmsDAO: FilmsDAO) {
 
   var LOGGER = Logger.getLogger(this.getClass.getName)
 
-  def createWithoutFilling(newFilmWithId: NewFilmWithId): Future[NewFilmWithId] = {
-    LOGGER.trace(s"Creating film without filling fields")
-    filmsDAO.insertFilm(newFilmWithId)
-  }
+  private val actorsFilmsDAO = new ActorsFilmsDAO(filmsDAO.config)
+  private val countriesFilmsDAO = new CountriesFilmsDAO(filmsDAO.config)
+  private val directorsFilmsDAO = new DirectorsFilmsDAO(filmsDAO.config)
+  private val genresFilmsDAO = new GenresFilmsDAO(filmsDAO.config)
 
   def getAllPublic(): Future[Seq[Film]] = {
     LOGGER.trace(s"Getting all public films")
@@ -37,29 +37,80 @@ class FilmsService(filmsDAO: FilmsDAO) {
     filmsDAO.findAll()
   }
 
-  def getById(id: Long): Future[Film] = {
+  def getById(id: Int): Future[Film] = {
     LOGGER.trace(s"Getting film with $id id")
     filmsDAO.findById(id).map(_.get)
   }
 
-  def updateById(id: Long, film: Film): Future[Int] = {
+  def updateById(id: Int, film: Film): Future[Int] = {
     LOGGER.trace(s"Updating film with $id id")
     filmsDAO.update(id, film)
   }
 
-  def deleteById(id: Long): Future[Option[Int]] = {
+  def deleteById(id: Int): Future[Boolean] = {
     LOGGER.trace(s"Deleting film with $id")
     filmsDAO.deleteById(id)
   }
 
-  def makePublic(id: Long) = {
+  def makePublic(id: Int) = {
     LOGGER.trace(s"Making film $id id public")
     filmsDAO.changeVisibility(id, true)
   }
 
-  def makePrivate(id: Long) = {
+  def makePrivate(id: Int) = {
     LOGGER.trace(s"Making film $id id private")
     filmsDAO.changeVisibility(id, false)
+  }
+
+  def createWithoutFilling(film: NewFilmWithId): Future[NewFilmWithId] = {
+    LOGGER.debug(s"Inserting film ${film.name}")
+
+    val actorsId = 0
+    val genresId = 1
+    val directorsId = 2
+    val countriesId = 3
+
+
+    val result = filmsDAO.insert(Film(film.id, film.name, film.ageLimit, film.shortDescription, film.timing, film.image,
+      film.releaseDate, film.awards, film.languageId, Option(false))).map(_.get)
+
+    for {
+      resultFut <- result
+      insertionFut <- insertLinkedTables(resultFut.id, film).map(data => film.copy(actorsId = data(actorsId), genresId = data(genresId), directorsId = data(directorsId), countriesId = data(countriesId)))
+
+
+    } yield (insertionFut.copy(id = resultFut.id, name = resultFut.name, ageLimit = resultFut.ageLimit, shortDescription = resultFut.shortDescription,
+      timing = resultFut.timing, releaseDate = resultFut.releaseDate, image = resultFut.image))
+  }
+
+  private def insertLinkedTables(id: Option[Int], film: NewFilmWithId): Future[List[Option[Seq[Int]]]] = {
+    val actorsListForInsertion = HelpFunctions.fOption(film.actorsId.map(_.map(data =>
+      ActorFilm(None, data, id.get))).map(actorsFilmsDAO.insertListActorFilm))
+      .map(_.flatten).map(_.map(_.map(_.actorId)))
+
+    val genresListForInsertion = HelpFunctions.fOption(film.genresId.map(_.map(data =>
+      GenreFilm(None, data, id.get))).map(genresFilmsDAO.insertListGenresFilm))
+      .map(_.flatten).map(_.map(_.map(_.genreId)))
+
+    val directorsListForInsertion = HelpFunctions.fOption(film.directorsId.map(_.map(data =>
+      DirectorFilm(None, data, id.get))).map(directorsFilmsDAO.insertListDirectorFilm))
+      .map(_.flatten).map(_.map(_.map(_.directorId)))
+
+    val countriesListForInsertion = HelpFunctions.fOption(film.countriesId.map(_.map(data =>
+      CountryFilm(None, data, id.get))).map(countriesFilmsDAO.insertListCountryFilm))
+      .map(_.flatten).map(_.map(_.map(_.countryId)))
+
+    Future.sequence(List(actorsListForInsertion, genresListForInsertion, directorsListForInsertion, countriesListForInsertion))
+  }
+
+  private def deleteByIdLinkedTablesQuery(id: Int) = {
+    (for {
+      genresDeleted <- genresFilmsDAO.deleteByFilmIdQuery(id).asTry
+      directorsDeleted <- directorsFilmsDAO.deleteByFilmIdQuery(id).asTry
+      countriesDeleted <- countriesFilmsDAO.deleteByFilmIdQuery(id).asTry
+      actorsDeleted <- actorsFilmsDAO.deleteByFilmIdQuery(id)
+      filmsDeleted <- filmsDAO.deleteByFilmIdQuery(id)
+    } yield (filmsDeleted))
   }
 
   def createFilmWithFilling(newFilm: NewFilmWithFields): Future[NewFilmWithId] = {

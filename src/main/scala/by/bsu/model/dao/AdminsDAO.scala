@@ -10,15 +10,17 @@ import scala.concurrent.Future
 import scala.language.postfixOps
 
 class AdminsDAO(val config: DatabaseConfig[JdbcProfile])
-  extends Db with AdminsTable {
+  extends BaseDAO with AdminsTable {
 
   import config.driver.api._
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
+  override type T = Admin
+
   val LOGGER = Logger.getLogger(this.getClass.getName)
 
-  def insertUniq(entity: Admin) = {
+  def insert(entity: Admin): Future[Option[Admin]] = {
     LOGGER.debug(s"Inserting admin ${entity.username}")
     val result = db.run(((admins returning admins) += entity).asTry).map(_.toOption)
     result.map(data => {
@@ -28,8 +30,8 @@ class AdminsDAO(val config: DatabaseConfig[JdbcProfile])
 
   }
 
-  def insertListActor(entities: Seq[Admin]) = {
-    Future.sequence(entities.map(entity => insertUniq(entity))).map(_.filter(_.nonEmpty).map(data => Option(data.get)))
+  def insertListActor(entities: Seq[Admin]): Future[Seq[Option[Admin]]] = {
+    Future.sequence(entities.map(entity => insert(entity))).map(_.filter(_.nonEmpty).map(data => Option(data.get)))
   }
 
 
@@ -63,5 +65,12 @@ class AdminsDAO(val config: DatabaseConfig[JdbcProfile])
 
   def deleteAll(): Future[Int] = {
     db.run(admins.delete)
+  }
+
+  def insertList(entities: Seq[Admin]): Future[Seq[Option[Admin]]] = {
+    {
+      Future.sequence(entities.map(actor => insert(actor))).map(_.filter(_.nonEmpty).map(data => Option(data.get)))
+    }
+
   }
 }

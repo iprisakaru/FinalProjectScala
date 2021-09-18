@@ -2,7 +2,7 @@ package by.bsu.model.repository
 
 import by.bsu.model.Db
 
-case class Film(id: Option[Long], name: String, ageLimit: Option[String], shortDescription: Option[String],
+case class Film(id: Option[Int], name: String, ageLimit: Option[String], shortDescription: Option[String],
                 timing: Option[String], image: Option[String], releaseDate: String, awards: Option[String],
                 languageId: Option[Int], isPublic: Option[Boolean])
 
@@ -11,7 +11,7 @@ case class NewFilmWithFields(name: String, ageLimit: Option[String], actors: Opt
                              timing: Option[String], image: Option[String], releaseDate: String, awards: Option[String],
                              languageName: Option[String])
 
-case class NewFilmWithId(id: Option[Long], name: String, ageLimit: Option[String], actorsId: Option[Seq[Int]],
+case class NewFilmWithId(id: Option[Int], name: String, ageLimit: Option[String], actorsId: Option[Seq[Int]],
                          genresId: Option[Seq[Int]], countriesId: Option[Seq[Int]], directorsId: Option[Seq[Int]],
                          shortDescription: Option[String], timing: Option[String], image: Option[String], releaseDate: String,
                          awards: Option[String], languageId: Option[Int], isPublic: Option[Boolean])
@@ -24,7 +24,7 @@ trait FilmsTable extends LanguagesTable {
 
 
   class Films(tag: Tag) extends Table[Film](tag, "films") {
-    def filmId = column[Long]("film_id", O.PrimaryKey, O.AutoInc)
+    def filmId = column[Int]("film_id", O.PrimaryKey, O.AutoInc)
 
     def name = column[String]("name")
 

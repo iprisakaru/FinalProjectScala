@@ -1,21 +1,20 @@
 package by.bsu.model.dao
 
-import by.bsu.model.Db
-import by.bsu.model.repository.{Genre, Language, LanguagesTable}
-import by.bsu.utils.HelpFunctions
+import by.bsu.model.repository.{Language, LanguagesTable}
 import org.apache.log4j.Logger
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Future
-import scala.util.Try
 
 class LanguagesDAO(val config: DatabaseConfig[JdbcProfile])
-  extends Db with LanguagesTable {
+  extends BaseDAO with LanguagesTable {
 
   import config.driver.api._
 
   import scala.concurrent.ExecutionContext.Implicits.global
+
+  override type T = Language
 
   val LOGGER = Logger.getLogger(this.getClass.getName)
 
@@ -41,7 +40,7 @@ class LanguagesDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(languages.filter(_.name === name).result.headOption)
   }
 
-  def insertUniq(entity: Language) = {
+  def insert(entity: Language): Future[Option[Language]] = {
     LOGGER.debug(s"Inserting admin ${entity.name}")
     val result = db.run(((languages returning languages) += entity).asTry).map(_.toOption)
     result.map(data => {
@@ -51,8 +50,8 @@ class LanguagesDAO(val config: DatabaseConfig[JdbcProfile])
 
   }
 
-  def insertListLanguages(entities: Seq[Language]) = {
-    Future.sequence(entities.map(entity => insertUniq(entity))).map(_.filter(_.nonEmpty).map(data => Option(data.get)))
+  def insertList(entities: Seq[Language]) = {
+    Future.sequence(entities.map(entity => insert(entity))).map(_.filter(_.nonEmpty).map(data => Option(data.get)))
   }
 
   def deleteAll(): Future[Int] = {

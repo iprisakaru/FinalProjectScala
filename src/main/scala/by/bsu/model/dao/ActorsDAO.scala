@@ -1,6 +1,5 @@
 package by.bsu.model.dao
 
-import by.bsu.model.Db
 import by.bsu.model.repository.{Actor, ActorsTable}
 import org.apache.log4j.Logger
 import slick.basic.DatabaseConfig
@@ -9,7 +8,9 @@ import slick.jdbc.JdbcProfile
 import scala.concurrent.Future
 
 class ActorsDAO(val config: DatabaseConfig[JdbcProfile])
-  extends Db with ActorsTable {
+  extends BaseDAO with ActorsTable {
+
+  override type T = Actor
 
   import config.driver.api._
 
@@ -39,21 +40,22 @@ class ActorsDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(actors.filter(_.name === name).result.headOption)
   }
 
-  def insertUniq(actor: Actor): Future[Option[Actor]] = {
+
+  def insert(actor: Actor): Future[Option[Actor]] = {
     LOGGER.debug(s"Inserting actor ${actor.name}")
     val result = db.run(((actors returning actors) += actor).asTry).map(_.toOption)
     result.map(data => {
       if (data.nonEmpty) Future(data)
       else findByName(actor.name)
     }).flatten
-
   }
 
-  def insertListActor(entities: Seq[Actor]): Future[Seq[Option[Actor]]] = {
-    Future.sequence(entities.map(actor => insertUniq(actor))).map(_.filter(_.nonEmpty).map(data => Option(data.get)))
+  def insertList(entities: Seq[Actor]): Future[Seq[Option[Actor]]] = {
+    Future.sequence(entities.map(actor => insert(actor))).map(_.filter(_.nonEmpty).map(data => Option(data.get)))
   }
 
   def deleteAll(): Future[Int] = {
     db.run(actors.delete)
   }
+
 }

@@ -8,7 +8,6 @@ import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Future
 import scala.language.postfixOps
-import scala.util.Try
 
 class ActorsFilmsDAO(val config: DatabaseConfig[JdbcProfile])
   extends Db with ActorsFilmsTable with ActorsTable with FilmsTable {

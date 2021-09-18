@@ -14,11 +14,11 @@ class ActorsService(actorsDao: ActorsDAO) {
   }
 
   def create(country: Actor) = {
-    actorsDao.insertUniq(country)
+    actorsDao.insert(country)
   }
 
   def createList(actorsList: Seq[Actor]) = {
-    actorsDao.insertListActor(actorsList)
+    actorsDao.insertList(actorsList)
   }
 
   def update(id: Int, country: Actor) = {

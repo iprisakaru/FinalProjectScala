@@ -10,7 +10,7 @@ import slick.jdbc.JdbcProfile
 import scala.concurrent.Future
 
 class UsersDAO(val config: DatabaseConfig[JdbcProfile])
-  extends Db with UsersTable {
+  extends BaseDAO with UsersTable {
 
   import config.driver.api._
 
@@ -18,10 +18,15 @@ class UsersDAO(val config: DatabaseConfig[JdbcProfile])
 
   val LOGGER = Logger.getLogger(this.getClass.getName)
 
-  def insert(user: User): Future[User] = {
+  override type T = User
+
+  def insert(user: User): Future[Option[User]] = {
     LOGGER.debug(s"Inserting user ${user.code}")
-    db.run(users returning users.map(_.user_id) += user)
-      .map(id => user.copy(id = Option(id)))
+    val result = db.run(((users returning users) += user).asTry).map(_.toOption)
+    result.map(data => {
+      if (data.nonEmpty) Future(data)
+      else findByName(user.code)
+    }).flatten
   }
 
 
@@ -51,4 +56,6 @@ class UsersDAO(val config: DatabaseConfig[JdbcProfile])
   def deleteAll(): Future[Int] = {
     db.run(users.delete)
   }
+
+  override def insertList(entities: Seq[User]): Future[Seq[Option[User]]] = ???
 }

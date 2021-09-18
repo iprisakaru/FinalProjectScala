@@ -9,11 +9,13 @@ import slick.jdbc.JdbcProfile
 import scala.concurrent.Future
 
 class GenresDAO(val config: DatabaseConfig[JdbcProfile])
-  extends Db with GenresTable {
+  extends BaseDAO with GenresTable {
 
   import config.driver.api._
 
   import scala.concurrent.ExecutionContext.Implicits.global
+
+  override type T = Genre
 
   val LOGGER = Logger.getLogger(this.getClass.getName)
 
@@ -39,7 +41,7 @@ class GenresDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(genres.filter(_.name === name).result.headOption)
   }
 
-  def insertUniq(entity: Genre) = {
+  def insert(entity: Genre): Future[Option[Genre]] = {
     LOGGER.debug(s"Inserting admin ${entity.name}")
     val result = db.run(((genres returning genres) += entity).asTry).map(_.toOption)
     result.map(data => {
@@ -49,8 +51,8 @@ class GenresDAO(val config: DatabaseConfig[JdbcProfile])
 
   }
 
-  def insertListGenres(entities: Seq[Genre]) = {
-    Future.sequence(entities.map(entity => insertUniq(entity))).map(_.filter(_.nonEmpty).map(data => Option(data.get)))
+  def insertList(entities: Seq[Genre]) = {
+    Future.sequence(entities.map(entity => insert(entity))).map(_.filter(_.nonEmpty).map(data => Option(data.get)))
   }
 
   def deleteAll(): Future[Int] = {
