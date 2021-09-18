@@ -42,6 +42,24 @@ class FilmsService(filmsDAO: FilmsDAO) {
     filmsDAO.findById(id).map(_.get)
   }
 
+  def getAllFullFilms(): Future[Seq[NewFilmWithFields]] = {
+    val films = filmsDAO.findAllWithLanguage()
+    val actorsToFilm = actorsFilmsDAO.joinActorsToFilmsId().map(_.map(data => data._1 -> data._2.map(_._2)))
+    val countriesToFilm = countriesFilmsDAO.joinCountriesToFilmsId().map(_.map(data => data._1 -> data._2.map(_._2)))
+    val directorsToFilm = directorsFilmsDAO.joinDirectorsToFilmsId().map(_.map(data => data._1 -> data._2.map(_._2)))
+    val genresToFilm = genresFilmsDAO.joinGenresToFilmsId().map(_.map(data => data._1 -> data._2.map(_._2)))
+
+    for {
+      filmsFut <- films
+      actorsToFilmFut <- actorsToFilm
+      countriesToFilmFut <- countriesToFilm
+      directorsToFilmFut <- directorsToFilm
+      genresToFilmFut <- genresToFilm
+    } yield (filmsFut.map(data => NewFilmWithFields(data._1.id, data._1.name, data._1.ageLimit, actorsToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.map(_.name).get)), genresToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.map(_.name).get)), countriesToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.map(_.name).get)), directorsToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.map(_.name).get)),
+      data._1.shortDescription, data._1.timing, data._1.image, data._1.releaseDate, data._1.awards, data._2.map(_.name), data._1.isPublic)))
+
+  }
+
   def updateById(id: Int, film: Film): Future[Int] = {
     LOGGER.trace(s"Updating film with $id id")
     filmsDAO.update(id, film)
@@ -74,13 +92,15 @@ class FilmsService(filmsDAO: FilmsDAO) {
     val result = filmsDAO.insert(Film(film.id, film.name, film.ageLimit, film.shortDescription, film.timing, film.image,
       film.releaseDate, film.awards, film.languageId, Option(false))).map(_.get)
 
-    for {
+    val e = for {
       resultFut <- result
       insertionFut <- insertLinkedTables(resultFut.id, film).map(data => film.copy(actorsId = data(actorsId), genresId = data(genresId), directorsId = data(directorsId), countriesId = data(countriesId)))
 
 
     } yield (insertionFut.copy(id = resultFut.id, name = resultFut.name, ageLimit = resultFut.ageLimit, shortDescription = resultFut.shortDescription,
       timing = resultFut.timing, releaseDate = resultFut.releaseDate, image = resultFut.image))
+    Await.result(e, 1000 hours)
+    e
   }
 
   private def insertLinkedTables(id: Option[Int], film: NewFilmWithId): Future[List[Option[Seq[Int]]]] = {
@@ -166,18 +186,18 @@ class FilmsService(filmsDAO: FilmsDAO) {
       timingFilledFut <- timingFilled
       imageFilledFut <- imageFilled
       ageLimitFilledFut <- ageLimitFilled
-    } yield (NewFilmWithFields(newFilm.name, ageLimitFilledFut, actorsFilledFut, genresFilledFut, countriesFilledFut,
+    } yield (NewFilmWithFields(None, newFilm.name, ageLimitFilledFut, actorsFilledFut, genresFilledFut, countriesFilledFut,
       directorsFilledFut, descriptionFilledFut, timingFilledFut, imageFilledFut,
-      newFilm.releaseDate, awardsFilledFut, languageFilledFut))
+      newFilm.releaseDate, awardsFilledFut, languageFilledFut, Option(false)))
   }
 
   def getFilmByNameAndYear(filmName: String, year: Int): Future[NewFilmWithFields] = {
 
     LOGGER.trace(s"Trying to more info about film $filmName - $year")
     val data = updateDataController.getAdditionalDataFromApi(filmName, year)
-    val result = data.map(_.map(film => NewFilmWithFields(film.Title, Option(film.Rated),
+    val result = data.map(_.map(film => NewFilmWithFields(None, film.Title, Option(film.Rated),
       Option(film.Actors.split(",").toSeq.map(_.trim)), Option(film.Genre.split(",").toSeq.map(_.trim)), Option(film.Country.split(",").toSeq.map(_.trim)), Option(film.Director.split(",").toSeq.map(_.trim)),
-      Option(film.Plot), Option(film.Runtime), Option(film.Poster), film.Released, Option(film.Awards), Option(film.Language))))
+      Option(film.Plot), Option(film.Runtime), Option(film.Poster), film.Released, Option(film.Awards), Option(film.Language), Option(false))))
 
     (result.map(_.head))
   }

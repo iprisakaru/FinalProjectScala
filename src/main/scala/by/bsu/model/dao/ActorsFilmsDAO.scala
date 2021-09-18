@@ -24,7 +24,7 @@ class ActorsFilmsDAO(val config: DatabaseConfig[JdbcProfile])
   }
 
 
-  def deleteById(actorId: Int, filmId: Long): Future[Boolean] = {
+  def deleteById(actorId: Int, filmId: Int): Future[Boolean] = {
     db.run(actorsFilms.filter(data => (data.actor_id === actorId) && (data.film_id === filmId)).delete) map {
       _ > 0
     }
@@ -34,7 +34,7 @@ class ActorsFilmsDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(actorsFilms.delete)
   }
 
-  def findByName(actorId: Int, filmId: Long): Future[Option[Long]] = {
+  def findByName(actorId: Int, filmId: Int): Future[Option[Int]] = {
     db.run(actorsFilms.filter(data => (data.actor_id === actorId && data.film_id === filmId)).result.headOption.map(_.get.actorFilmId))
   }
 
@@ -42,12 +42,17 @@ class ActorsFilmsDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(actorsFilms.result)
   }
 
-  def deleteByFilmIdQuery(id: Long) = {
+  def deleteByFilmIdQuery(id: Int) = {
     actorsFilms.filter(e => e.film_id === id).delete
   }
 
+  def joinActorsToFilmsId() = {
+    db.run(actorsFilms.joinLeft(actors).on(_.actor_id === _.actor_id).result)
+      .map(_.groupBy(_._1.filmId))
+  }
 
   def insertListActorFilm(entities: Seq[ActorFilm]) = {
-    db.run(DBIO.sequence(entities.map(entity => (actorsFilms returning actorsFilms) += entity)).asTry).map(_.toOption)
+    db.run(DBIO.sequence(entities.map(entity =>
+      (actorsFilms returning actorsFilms) += entity)).asTry).map(_.toOption)
   }
 }

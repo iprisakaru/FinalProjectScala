@@ -14,7 +14,7 @@ import scala.language.postfixOps
 trait FilmJsonMapping extends DefaultJsonProtocol {
   implicit val film1Format: RootJsonFormat[NewFilmWithId] = jsonFormat14(NewFilmWithId.apply)
   implicit val film2Format: RootJsonFormat[Film] = jsonFormat10(Film.apply)
-  implicit val film3Format: RootJsonFormat[NewFilmWithFields] = jsonFormat12(NewFilmWithFields.apply)
+  implicit val film3Format: RootJsonFormat[NewFilmWithFields] = jsonFormat14(NewFilmWithFields.apply)
 }
 
 trait FilmsApi extends FilmJsonMapping {
@@ -78,5 +78,10 @@ trait FilmsApi extends FilmJsonMapping {
 
   }
 
+  val generalFilmsRoute: Route = {
+    get {
+      complete(filmsService.getAllFullFilms().map(_.toJson))
+    }
+  }
 
 }

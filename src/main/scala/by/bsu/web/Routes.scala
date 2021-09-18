@@ -12,18 +12,20 @@ import scala.language.postfixOps
 
 trait Routes extends FilmsApi with GenresApi with DirectorsApi with ActorsApi {
   val routes: Route =
-    myAuthenticateBasicAsync("none", myAuthenticator) {
+    pathPrefix("films") {
+      generalFilmsRoute
+    } ~ myAuthenticateBasicAsync("none", myAuthenticator) {
       user =>
         LOGGER.debug(s"Admin $user makes request")
-        pathPrefix("films") {
+        pathPrefix("a-films") {
           filmRoute
-        } ~ pathPrefix("genres") {
+        } ~ pathPrefix("a-genres") {
           genreRoute
-        } ~ pathPrefix("directors") {
+        } ~ pathPrefix("a-directors") {
           directorRoute
-        } ~ pathPrefix("actors") {
+        } ~ pathPrefix("a-actors") {
           actorsRoute
-        } ~ pathPrefix("periodicity") {
+        } ~ pathPrefix("a-periodicity") {
           periodicRequest
         }
     }

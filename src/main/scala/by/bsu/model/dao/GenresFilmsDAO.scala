@@ -22,7 +22,7 @@ class GenresFilmsDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(DBIO.sequence(entities.map(entity => (genresFilms returning genresFilms) += entity)).asTry).map(_.toOption)
   }
 
-  def deleteById(genreId: Int, filmId: Long): Future[Boolean] = {
+  def deleteById(genreId: Int, filmId: Int): Future[Boolean] = {
     db.run(genresFilms.filter(data => (data.genre_id === genreId) && (data.film_id === filmId)).delete) map {
       _ > 0
     }
@@ -35,12 +35,17 @@ class GenresFilmsDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(genresFilms.delete)
   }
 
-  def deleteByFilmIdQuery(id: Long) = {
+  def deleteByFilmIdQuery(id: Int) = {
     genresFilms.filter(e => e.film_id === id).delete
   }
 
-  def findByName(genreId: Int, filmId: Long): Future[Option[Long]] = {
+  def findByName(genreId: Int, filmId: Int): Future[Option[Int]] = {
     db.run(genresFilms.filter(data => (data.genre_id === genreId && data.film_id === filmId)).result.headOption.map(_.get.genreFilmId))
+  }
+
+  def joinGenresToFilmsId() = {
+    db.run(genresFilms.joinLeft(genres).on(_.genre_id === _.genre_id).result)
+      .map(_.groupBy(_._1.filmId))
   }
 
 }
