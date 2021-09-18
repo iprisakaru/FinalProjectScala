@@ -55,7 +55,11 @@ class FilmsService(filmsDAO: FilmsDAO) {
       countriesToFilmFut <- countriesToFilm
       directorsToFilmFut <- directorsToFilm
       genresToFilmFut <- genresToFilm
-    } yield (filmsFut.map(data => NewFilmWithFields(data._1.id, data._1.name, data._1.ageLimit, actorsToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.map(_.name).get)), genresToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.map(_.name).get)), countriesToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.map(_.name).get)), directorsToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.map(_.name).get)),
+    } yield (filmsFut.map(data => NewFilmWithFields(data._1.id, data._1.name, data._1.ageLimit,
+      actorsToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.map(_.name).get)),
+      genresToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.map(_.name).get)),
+      countriesToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.map(_.name).get)),
+      directorsToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.map(_.name).get)),
       data._1.shortDescription, data._1.timing, data._1.image, data._1.releaseDate, data._1.awards, data._2.map(_.name), data._1.isPublic)))
 
   }
@@ -92,15 +96,13 @@ class FilmsService(filmsDAO: FilmsDAO) {
     val result = filmsDAO.insert(Film(film.id, film.name, film.ageLimit, film.shortDescription, film.timing, film.image,
       film.releaseDate, film.awards, film.languageId, Option(false))).map(_.get)
 
-    val e = for {
+    for {
       resultFut <- result
       insertionFut <- insertLinkedTables(resultFut.id, film).map(data => film.copy(actorsId = data(actorsId), genresId = data(genresId), directorsId = data(directorsId), countriesId = data(countriesId)))
 
 
     } yield (insertionFut.copy(id = resultFut.id, name = resultFut.name, ageLimit = resultFut.ageLimit, shortDescription = resultFut.shortDescription,
       timing = resultFut.timing, releaseDate = resultFut.releaseDate, image = resultFut.image))
-    Await.result(e, 1000 hours)
-    e
   }
 
   private def insertLinkedTables(id: Option[Int], film: NewFilmWithId): Future[List[Option[Seq[Int]]]] = {
