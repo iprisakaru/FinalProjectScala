@@ -4,7 +4,7 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import by.bsu.Application.LOGGER
-import by.bsu.model.repository.{Film, NewFilmWithFields, NewFilmWithId}
+import by.bsu.model.repository.{Film, NewFilmWithFields, NewFilmWithFieldsId, NewFilmWithId}
 import by.bsu.utils.RouteService.filmsService
 import spray.json.{DefaultJsonProtocol, RootJsonFormat, enrichAny}
 
@@ -15,6 +15,7 @@ trait FilmJsonMapping extends DefaultJsonProtocol {
   implicit val film1Format: RootJsonFormat[NewFilmWithId] = jsonFormat14(NewFilmWithId.apply)
   implicit val film2Format: RootJsonFormat[Film] = jsonFormat10(Film.apply)
   implicit val film3Format: RootJsonFormat[NewFilmWithFields] = jsonFormat14(NewFilmWithFields.apply)
+  implicit val film4Format: RootJsonFormat[NewFilmWithFieldsId] = jsonFormat14(NewFilmWithFieldsId.apply)
 }
 
 trait FilmsApi extends FilmJsonMapping {

@@ -16,6 +16,10 @@ case class NewFilmWithId(id: Option[Int], name: String, ageLimit: Option[String]
                          shortDescription: Option[String], timing: Option[String], image: Option[String], releaseDate: String,
                          awards: Option[String], languageId: Option[Int], isPublic: Option[Boolean])
 
+case class NewFilmWithFieldsId(id: Option[Int], name: String, ageLimit: Option[String], actors: Option[Seq[(Int, String)]],
+                               genres: Option[Seq[(Int, String)]], countries: Option[Seq[(Int, String)]], directors: Option[Seq[(Int, String)]],
+                               shortDescription: Option[String], timing: Option[String], image: Option[String], releaseDate: String,
+                               awards: Option[String], languages: Option[(Int, String)], isPublic: Option[Boolean])
 
 trait FilmsTable extends LanguagesTable {
   this: Db =>

@@ -7,8 +7,7 @@ import by.bsu.web.api.UpdatingDataController
 import org.apache.log4j.Logger
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 import scala.language.postfixOps
 
 class FilmsService(filmsDAO: FilmsDAO) {
@@ -42,7 +41,7 @@ class FilmsService(filmsDAO: FilmsDAO) {
     filmsDAO.findById(id).map(_.get)
   }
 
-  def getAllFullFilms(): Future[Seq[NewFilmWithFields]] = {
+  def getAllFullFilms() = {
     val films = filmsDAO.findAllWithLanguage()
     val actorsToFilm = actorsFilmsDAO.joinActorsToFilmsId().map(_.map(data => data._1 -> data._2.map(_._2)))
     val countriesToFilm = countriesFilmsDAO.joinCountriesToFilmsId().map(_.map(data => data._1 -> data._2.map(_._2)))
@@ -55,12 +54,13 @@ class FilmsService(filmsDAO: FilmsDAO) {
       countriesToFilmFut <- countriesToFilm
       directorsToFilmFut <- directorsToFilm
       genresToFilmFut <- genresToFilm
-    } yield (filmsFut.map(data => NewFilmWithFields(data._1.id, data._1.name, data._1.ageLimit,
-      actorsToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.map(_.name).get)),
-      genresToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.map(_.name).get)),
-      countriesToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.map(_.name).get)),
-      directorsToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.map(_.name).get)),
-      data._1.shortDescription, data._1.timing, data._1.image, data._1.releaseDate, data._1.awards, data._2.map(_.name), data._1.isPublic)))
+
+    } yield (filmsFut.map(data => NewFilmWithFieldsId(data._1.id, data._1.name, data._1.ageLimit,
+      actorsToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.get).map(data => (data.id.get -> data.name))),
+      genresToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.get).map(data => (data.id.get -> data.name))),
+      countriesToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.get).map(data => (data.id.get -> data.name))),
+      directorsToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.get).map(data => (data.id.get -> data.name))),
+      data._1.shortDescription, data._1.timing, data._1.image, data._1.releaseDate, data._1.awards, data._2.map(data => (data.id.get -> data.name)), data._1.isPublic)))
 
   }
 
