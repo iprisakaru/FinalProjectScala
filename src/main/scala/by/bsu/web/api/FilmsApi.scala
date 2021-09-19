@@ -5,7 +5,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import by.bsu.Application.LOGGER
 import by.bsu.model.repository.{Film, NewFilmWithFields, NewFilmWithFieldsId, NewFilmWithId}
-import by.bsu.utils.RouteService.filmsService
+import by.bsu.utils.RouteService.{commentsService, filmsService}
 import spray.json.{DefaultJsonProtocol, RootJsonFormat, enrichAny}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -18,7 +18,7 @@ trait FilmJsonMapping extends DefaultJsonProtocol {
   implicit val film4Format: RootJsonFormat[NewFilmWithFieldsId] = jsonFormat14(NewFilmWithFieldsId.apply)
 }
 
-trait FilmsApi extends FilmJsonMapping {
+trait FilmsApi extends FilmJsonMapping with CommentsApi {
   val filmRoute: Route = {
     delete {
       (path(IntNumber)) { id => {
@@ -80,22 +80,24 @@ trait FilmsApi extends FilmJsonMapping {
   }
 
   val generalFilmsRoute: Route = {
-
-    get {
-      path("directors") {
-        parameter("name") {
-          name =>
-            complete(filmsService.getFullFilmsByDirector(name).map(_.toJson))
+    pathPrefix("comments") {
+      commentsRoute
+    } ~
+      get {
+        path("directors") {
+          parameter("name") {
+            name =>
+              complete(filmsService.getFullFilmsByDirector(name).map(_.toJson))
+          }
+        } ~
+          parameter("name") { id =>
+            LOGGER.debug("Searching for the name")
+            complete(filmsService.getFullFilmsByName(id))
+          } ~ parameter("releaseDate") { date =>
+          LOGGER.debug("Searching for the release date")
+          complete(filmsService.getFullFilmsByDate(date))
         }
-      } ~
-        parameter("name") { id =>
-          LOGGER.debug("Searching for the name")
-          complete(filmsService.getFullFilmsByName(id))
-        } ~ parameter("releaseDate") { date =>
-        LOGGER.debug("Searching for the release date")
-        complete(filmsService.getFullFilmsByDate(date))
       }
-    }
   }
 
 }
