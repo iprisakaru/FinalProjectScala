@@ -46,7 +46,11 @@ class DirectorsFilmsDAO(val config: DatabaseConfig[JdbcProfile])
   }
 
   def joinDirectorsToFilmId(id: Int) = {
-    db.run(directorsFilms.filter(_.film_id === id).joinLeft(directors).on(_.director_id===_.director_id).result)
+    db.run(directorsFilms.filter(_.film_id === id).joinLeft(directors).on(_.director_id === _.director_id).result)
       .map(_.groupBy(_._1.filmId))
+  }
+
+  def findByDirectorId(id: Int): Future[Seq[DirectorFilm]] = {
+    db.run(directorsFilms.filter(_.director_id === id).result)
   }
 }

@@ -66,7 +66,7 @@ class FilmsService(filmsDAO: FilmsDAO) {
 
   }
 
-  def getFullFilmByName(name: String): Future[Seq[NewFilmWithFieldsId]] = {
+  def getFullFilmsByName(name: String): Future[Seq[NewFilmWithFieldsId]] = {
     LOGGER.debug(s"Getting all films by name: $name")
     val films: Future[Seq[(Film, Option[Language])]] = filmsDAO.findAllByName(name)
     films.map(films => LOGGER.debug(s"${films.size} films were gotten"))
@@ -78,6 +78,13 @@ class FilmsService(filmsDAO: FilmsDAO) {
     val films = filmsDAO.findAllByYear(releaseDate)
     films.map(films => LOGGER.debug(s"${films.size} films were gotten"))
     films.flatMap(getFullFilm)
+  }
+
+  def getFullFilmsByDirector(directorName: String) = {
+    val director = directorsService.getByName(directorName)
+    val filmIds = director.flatMap(info => HelpFunctions.fOption(info.map(data => directorsFilmsService.getByDirectorId(data.id.get).map(_.map(_.filmId)))))
+    val films = filmIds.flatMap(data => HelpFunctions.fOption(data.map(info => Future.sequence(info.map(data => filmsDAO.findAllById(data))))))
+    films.flatMap(info => HelpFunctions.fOption(info.map(data => Future.sequence(data.map(getFullFilm)))))
   }
 
   private def getFullFilm(films: Seq[(Film, Option[Language])]): Future[Seq[NewFilmWithFieldsId]] = {

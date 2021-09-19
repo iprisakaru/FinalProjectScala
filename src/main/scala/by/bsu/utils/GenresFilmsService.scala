@@ -23,4 +23,5 @@ class GenresFilmsService(genresFilmsDAO: GenresFilmsDAO) {
   def deleteAll() = {
     genresFilmsDAO.deleteAll()
   }
+
 }
