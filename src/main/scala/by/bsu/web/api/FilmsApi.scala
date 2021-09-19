@@ -85,6 +85,9 @@ trait FilmsApi extends FilmJsonMapping {
       parameter("name") { id =>
         LOGGER.debug("Searching for the name")
         complete(filmsService.getFullFilmByName(id))
+      } ~ parameter("releaseDate") { date =>
+        LOGGER.debug("Searching for the release date")
+        complete(filmsService.getFullFilmsByDate(date))
       }
     }
   }

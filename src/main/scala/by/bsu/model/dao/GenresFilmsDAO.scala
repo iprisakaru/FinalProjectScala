@@ -49,7 +49,7 @@ class GenresFilmsDAO(val config: DatabaseConfig[JdbcProfile])
   }
 
   def joinGenresToFilmId(id: Int) = {
-    db.run(genresFilms.filter(_.film_id === id).joinLeft(genresFilms).on(_.genre_id===_.genre_id).result)
+    db.run(genresFilms.filter(_.film_id === id).joinLeft(genres).on(_.genre_id === _.genre_id).result)
       .map(_.groupBy(_._1.filmId))
   }
 

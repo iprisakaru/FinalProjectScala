@@ -68,20 +68,31 @@ class FilmsService(filmsDAO: FilmsDAO) {
 
   def getFullFilmByName(name: String): Future[Seq[NewFilmWithFieldsId]] = {
     LOGGER.debug(s"Getting all films by name: $name")
-    val films = filmsDAO.findAllByName(name)
+    val films: Future[Seq[(Film, Option[Language])]] = filmsDAO.findAllByName(name)
     films.map(films => LOGGER.debug(s"${films.size} films were gotten"))
+    films.flatMap(getFullFilm)
+  }
+
+  def getFullFilmsByDate(releaseDate: String): Future[Seq[NewFilmWithFieldsId]] = {
+    LOGGER.debug(s"Getting all films by name: $releaseDate")
+    val films = filmsDAO.findAllByYear(releaseDate)
+    films.map(films => LOGGER.debug(s"${films.size} films were gotten"))
+    films.flatMap(getFullFilm)
+  }
+
+  private def getFullFilm(films: Seq[(Film, Option[Language])]): Future[Seq[NewFilmWithFieldsId]] = {
+
     val actorsToFilm = actorsFilmsDAO.joinActorsToFilmsId().map(_.map(data => data._1 -> data._2.map(_._2)))
     val countriesToFilm = countriesFilmsDAO.joinCountriesToFilmsId().map(_.map(data => data._1 -> data._2.map(_._2)))
     val directorsToFilm = directorsFilmsDAO.joinDirectorsToFilmsId().map(_.map(data => data._1 -> data._2.map(_._2)))
     val genresToFilm = genresFilmsDAO.joinGenresToFilmsId().map(_.map(data => data._1 -> data._2.map(_._2)))
     for {
-      filmsFut <- films
       actorsToFilmFut <- actorsToFilm
       countriesToFilmFut <- countriesToFilm
       directorsToFilmFut <- directorsToFilm
       genresToFilmFut <- genresToFilm
 
-    } yield filmsFut.map(data => NewFilmWithFieldsId(data._1.id, data._1.name, data._1.ageLimit,
+    } yield films.map(data => NewFilmWithFieldsId(data._1.id, data._1.name, data._1.ageLimit,
       actorsToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.get).map(data => data.id.get -> data.name)),
       genresToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.get).map(data => data.id.get -> data.name)),
       countriesToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.get).map(data => data.id.get -> data.name)),

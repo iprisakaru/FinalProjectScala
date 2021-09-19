@@ -70,6 +70,11 @@ class FilmsDAO(override val config: DatabaseConfig[JdbcProfile])
     db.run(films.filter(_.name === name).joinLeft(languages).on(_.languageId === _.language_id).result)
   }
 
+  def findAllByYear(releaseDate: String) = {
+    db.run(films.filter(_.releaseDate === releaseDate).joinLeft(languages).on(_.languageId === _.language_id).result)
+
+  }
+
   def deleteAll(): Future[Int] = {
     db.run(films.delete)
   }
