@@ -44,4 +44,9 @@ class DirectorsFilmsDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(directorsFilms.joinLeft(directors).on(_.director_id === _.director_id).result)
       .map(_.groupBy(_._1.filmId))
   }
+
+  def joinDirectorsToFilmId(id: Int) = {
+    db.run(directorsFilms.filter(_.film_id === id).joinLeft(directors).on(_.director_id===_.director_id).result)
+      .map(_.groupBy(_._1.filmId))
+  }
 }

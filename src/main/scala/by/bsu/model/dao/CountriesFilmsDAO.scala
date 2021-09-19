@@ -61,4 +61,9 @@ class CountriesFilmsDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(countriesFilms.joinLeft(countries).on(_.country_id === _.country_id).result)
       .map(_.groupBy(_._1.filmId))
   }
+
+  def joinCountryToFilmId(id: Int) = {
+    db.run(countriesFilms.filter(_.film_id === id).joinLeft(countries).on(_.country_id===_.country_id).result)
+      .map(_.groupBy(_._1.filmId))
+  }
 }

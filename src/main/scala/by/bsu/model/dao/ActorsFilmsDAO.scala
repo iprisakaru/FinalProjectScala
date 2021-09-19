@@ -1,7 +1,7 @@
 package by.bsu.model.dao
 
 import by.bsu.model.Db
-import by.bsu.model.repository.{ActorFilm, ActorsFilmsTable, ActorsTable, FilmsTable}
+import by.bsu.model.repository.{Actor, ActorFilm, ActorsFilmsTable, ActorsTable, FilmsTable}
 import org.apache.log4j.Logger
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
@@ -46,10 +46,16 @@ class ActorsFilmsDAO(val config: DatabaseConfig[JdbcProfile])
     actorsFilms.filter(e => e.film_id === id).delete
   }
 
-  def joinActorsToFilmsId() = {
+  def joinActorsToFilmsId(): Future[Map[Int, Seq[(ActorFilm, Option[Actor])]]] = {
     db.run(actorsFilms.joinLeft(actors).on(_.actor_id === _.actor_id).result)
       .map(_.groupBy(_._1.filmId))
   }
+
+  def joinActorToFilmId(id: Int): Future[Map[Int, Seq[(ActorFilm, Option[Actor])]]] = {
+    db.run(actorsFilms.filter(_.film_id === id).joinLeft(actors).on(_.actor_id===_.actor_id).result)
+      .map(_.groupBy(_._1.filmId))
+  }
+
 
   def insertListActorFilm(entities: Seq[ActorFilm]) = {
     db.run(DBIO.sequence(entities.map(entity =>

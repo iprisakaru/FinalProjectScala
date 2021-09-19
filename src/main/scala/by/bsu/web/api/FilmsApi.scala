@@ -30,10 +30,10 @@ trait FilmsApi extends FilmJsonMapping {
       get {
         path("private") {
           LOGGER.debug("Getting all private films")
-          complete(filmsService.getAllPrivate())
+          complete(filmsService.getAllPrivate)
         } ~ {
           LOGGER.debug("Getting all public films")
-          complete(filmsService.getAllPublic().map(_.toJson))
+          complete(filmsService.getAllPublic.map(_.toJson))
         } ~
           (path(IntNumber)) { id => {
             LOGGER.debug(s"Getting films with $id id")
@@ -80,8 +80,12 @@ trait FilmsApi extends FilmJsonMapping {
   }
 
   val generalFilmsRoute: Route = {
+
     get {
-      complete(filmsService.getAllFullFilms().map(_.toJson))
+      parameter("name") { id =>
+        LOGGER.debug("Searching for the name")
+        complete(filmsService.getFullFilmByName(id))
+      }
     }
   }
 

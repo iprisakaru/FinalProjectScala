@@ -66,7 +66,11 @@ class FilmsDAO(override val config: DatabaseConfig[JdbcProfile])
     db.run(films.joinLeft(languages).on(_.languageId === _.language_id).result)
   }
 
-  override def deleteAll(): Future[Int] = {
+  def findAllByName(name: String) = {
+    db.run(films.filter(_.name === name).joinLeft(languages).on(_.languageId === _.language_id).result)
+  }
+
+  def deleteAll(): Future[Int] = {
     db.run(films.delete)
   }
 
