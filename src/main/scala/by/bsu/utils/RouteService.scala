@@ -22,4 +22,5 @@ object RouteService {
   //users and admins tables
 
   val adminsService = new AdminsService(new AdminsDAO(dbConfig))
+  val commentsService = new CommentsService(new CommentsDAO(dbConfig))
 }

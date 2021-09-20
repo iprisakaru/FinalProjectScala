@@ -7,32 +7,31 @@ import by.bsu.web.api.UpdatingDataController
 import org.apache.log4j.Logger
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 import scala.language.postfixOps
 
 class FilmsService(filmsDAO: FilmsDAO) {
 
   val updateDataController = new UpdatingDataController
 
-  var LOGGER = Logger.getLogger(this.getClass.getName)
+  var LOGGER: Logger = Logger.getLogger(this.getClass.getName)
 
   private val actorsFilmsDAO = new ActorsFilmsDAO(filmsDAO.config)
   private val countriesFilmsDAO = new CountriesFilmsDAO(filmsDAO.config)
   private val directorsFilmsDAO = new DirectorsFilmsDAO(filmsDAO.config)
   private val genresFilmsDAO = new GenresFilmsDAO(filmsDAO.config)
 
-  def getAllPublic(): Future[Seq[Film]] = {
+  def getAllPublic: Future[Seq[Film]] = {
     LOGGER.trace(s"Getting all public films")
     filmsDAO.findAll(true)
   }
 
-  def getAllPrivate(): Future[Seq[Film]] = {
+  def getAllPrivate: Future[Seq[Film]] = {
     LOGGER.trace(s"Getting all private films")
     filmsDAO.findAll(false)
   }
 
-  def getAll(): Future[Seq[Film]] = {
+  def getAll: Future[Seq[Film]] = {
     LOGGER.trace(s"Getting all films")
     filmsDAO.findAll()
   }
@@ -40,6 +39,73 @@ class FilmsService(filmsDAO: FilmsDAO) {
   def getById(id: Int): Future[Film] = {
     LOGGER.trace(s"Getting film with $id id")
     filmsDAO.findById(id).map(_.get)
+  }
+
+  def getAllFullFilms: Future[Seq[NewFilmWithFieldsId]] = {
+    LOGGER.debug("Getting all films")
+    val films = filmsDAO.findAllWithLanguage()
+    films.map(films => LOGGER.debug(s"${films.size} films were gotten"))
+    val actorsToFilm = actorsFilmsDAO.joinActorsToFilmsId().map(_.map(data => data._1 -> data._2.map(_._2)))
+    val countriesToFilm = countriesFilmsDAO.joinCountriesToFilmsId().map(_.map(data => data._1 -> data._2.map(_._2)))
+    val directorsToFilm = directorsFilmsDAO.joinDirectorsToFilmsId().map(_.map(data => data._1 -> data._2.map(_._2)))
+    val genresToFilm = genresFilmsDAO.joinGenresToFilmsId().map(_.map(data => data._1 -> data._2.map(_._2)))
+
+    for {
+      filmsFut <- films
+      actorsToFilmFut <- actorsToFilm
+      countriesToFilmFut <- countriesToFilm
+      directorsToFilmFut <- directorsToFilm
+      genresToFilmFut <- genresToFilm
+
+    } yield filmsFut.map(data => NewFilmWithFieldsId(data._1.id, data._1.name, data._1.ageLimit,
+      actorsToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.get).map(data => data.id.get -> data.name)),
+      genresToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.get).map(data => data.id.get -> data.name)),
+      countriesToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.get).map(data => data.id.get -> data.name)),
+      directorsToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.get).map(data => data.id.get -> data.name)),
+      data._1.shortDescription, data._1.timing, data._1.image, data._1.releaseDate, data._1.awards, data._2.map(data => data.id.get -> data.name), data._1.isPublic))
+
+  }
+
+  def getFullFilmsByName(name: String): Future[Seq[NewFilmWithFieldsId]] = {
+    LOGGER.debug(s"Getting all films by name: $name")
+    val films: Future[Seq[(Film, Option[Language])]] = filmsDAO.findAllByName(name)
+    films.map(films => LOGGER.debug(s"${films.size} films were gotten"))
+    films.flatMap(getFullFilm)
+  }
+
+  def getFullFilmsByDate(releaseDate: String): Future[Seq[NewFilmWithFieldsId]] = {
+    LOGGER.debug(s"Getting all films by name: $releaseDate")
+    val films = filmsDAO.findAllByYear(releaseDate)
+    films.map(films => LOGGER.debug(s"${films.size} films were gotten"))
+    films.flatMap(getFullFilm)
+  }
+
+  def getFullFilmsByDirector(directorName: String) = {
+    val director = directorsService.getByName(directorName)
+    val filmIds = director.flatMap(info => HelpFunctions.fOption(info.map(data => directorsFilmsService.getByDirectorId(data.id.get).map(_.map(_.filmId)))))
+    val films = filmIds.flatMap(data => HelpFunctions.fOption(data.map(info => Future.sequence(info.map(data => filmsDAO.findAllById(data))))))
+    films.flatMap(info => HelpFunctions.fOption(info.map(data => Future.sequence(data.map(getFullFilm)))))
+  }
+
+  private def getFullFilm(films: Seq[(Film, Option[Language])]): Future[Seq[NewFilmWithFieldsId]] = {
+
+    val actorsToFilm = actorsFilmsDAO.joinActorsToFilmsId().map(_.map(data => data._1 -> data._2.map(_._2)))
+    val countriesToFilm = countriesFilmsDAO.joinCountriesToFilmsId().map(_.map(data => data._1 -> data._2.map(_._2)))
+    val directorsToFilm = directorsFilmsDAO.joinDirectorsToFilmsId().map(_.map(data => data._1 -> data._2.map(_._2)))
+    val genresToFilm = genresFilmsDAO.joinGenresToFilmsId().map(_.map(data => data._1 -> data._2.map(_._2)))
+    for {
+      actorsToFilmFut <- actorsToFilm
+      countriesToFilmFut <- countriesToFilm
+      directorsToFilmFut <- directorsToFilm
+      genresToFilmFut <- genresToFilm
+
+    } yield films.map(data => NewFilmWithFieldsId(data._1.id, data._1.name, data._1.ageLimit,
+      actorsToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.get).map(data => data.id.get -> data.name)),
+      genresToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.get).map(data => data.id.get -> data.name)),
+      countriesToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.get).map(data => data.id.get -> data.name)),
+      directorsToFilmFut.get(data._1.id.get).map(_.filter(_.nonEmpty).map(_.get).map(data => data.id.get -> data.name)),
+      data._1.shortDescription, data._1.timing, data._1.image, data._1.releaseDate, data._1.awards, data._2.map(data => data.id.get -> data.name), data._1.isPublic))
+
   }
 
   def updateById(id: Int, film: Film): Future[Int] = {
@@ -52,12 +118,12 @@ class FilmsService(filmsDAO: FilmsDAO) {
     filmsDAO.deleteById(id)
   }
 
-  def makePublic(id: Int) = {
+  def makePublic(id: Int): Future[Int] = {
     LOGGER.trace(s"Making film $id id public")
-    filmsDAO.changeVisibility(id, true)
+    filmsDAO.changeVisibility(id, isVisible = true)
   }
 
-  def makePrivate(id: Int) = {
+  def makePrivate(id: Int): Future[Int] = {
     LOGGER.trace(s"Making film $id id private")
     filmsDAO.changeVisibility(id, false)
   }
@@ -166,18 +232,18 @@ class FilmsService(filmsDAO: FilmsDAO) {
       timingFilledFut <- timingFilled
       imageFilledFut <- imageFilled
       ageLimitFilledFut <- ageLimitFilled
-    } yield (NewFilmWithFields(newFilm.name, ageLimitFilledFut, actorsFilledFut, genresFilledFut, countriesFilledFut,
+    } yield (NewFilmWithFields(None, newFilm.name, ageLimitFilledFut, actorsFilledFut, genresFilledFut, countriesFilledFut,
       directorsFilledFut, descriptionFilledFut, timingFilledFut, imageFilledFut,
-      newFilm.releaseDate, awardsFilledFut, languageFilledFut))
+      newFilm.releaseDate, awardsFilledFut, languageFilledFut, Option(false)))
   }
 
   def getFilmByNameAndYear(filmName: String, year: Int): Future[NewFilmWithFields] = {
 
     LOGGER.trace(s"Trying to more info about film $filmName - $year")
     val data = updateDataController.getAdditionalDataFromApi(filmName, year)
-    val result = data.map(_.map(film => NewFilmWithFields(film.Title, Option(film.Rated),
+    val result = data.map(_.map(film => NewFilmWithFields(None, film.Title, Option(film.Rated),
       Option(film.Actors.split(",").toSeq.map(_.trim)), Option(film.Genre.split(",").toSeq.map(_.trim)), Option(film.Country.split(",").toSeq.map(_.trim)), Option(film.Director.split(",").toSeq.map(_.trim)),
-      Option(film.Plot), Option(film.Runtime), Option(film.Poster), film.Released, Option(film.Awards), Option(film.Language))))
+      Option(film.Plot), Option(film.Runtime), Option(film.Poster), film.Released, Option(film.Awards), Option(film.Language), Option(false))))
 
     (result.map(_.head))
   }

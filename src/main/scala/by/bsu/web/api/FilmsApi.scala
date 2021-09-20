@@ -4,8 +4,8 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import by.bsu.Application.LOGGER
-import by.bsu.model.repository.{Film, NewFilmWithFields, NewFilmWithId}
-import by.bsu.utils.RouteService.filmsService
+import by.bsu.model.repository.{Film, NewFilmWithFields, NewFilmWithFieldsId, NewFilmWithId}
+import by.bsu.utils.RouteService.{commentsService, filmsService}
 import spray.json.{DefaultJsonProtocol, RootJsonFormat, enrichAny}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -14,10 +14,11 @@ import scala.language.postfixOps
 trait FilmJsonMapping extends DefaultJsonProtocol {
   implicit val film1Format: RootJsonFormat[NewFilmWithId] = jsonFormat14(NewFilmWithId.apply)
   implicit val film2Format: RootJsonFormat[Film] = jsonFormat10(Film.apply)
-  implicit val film3Format: RootJsonFormat[NewFilmWithFields] = jsonFormat12(NewFilmWithFields.apply)
+  implicit val film3Format: RootJsonFormat[NewFilmWithFields] = jsonFormat14(NewFilmWithFields.apply)
+  implicit val film4Format: RootJsonFormat[NewFilmWithFieldsId] = jsonFormat14(NewFilmWithFieldsId.apply)
 }
 
-trait FilmsApi extends FilmJsonMapping {
+trait FilmsApi extends FilmJsonMapping with CommentsApi {
   val filmRoute: Route = {
     delete {
       (path(IntNumber)) { id => {
@@ -29,10 +30,10 @@ trait FilmsApi extends FilmJsonMapping {
       get {
         path("private") {
           LOGGER.debug("Getting all private films")
-          complete(filmsService.getAllPrivate())
+          complete(filmsService.getAllPrivate)
         } ~ {
           LOGGER.debug("Getting all public films")
-          complete(filmsService.getAllPublic().map(_.toJson))
+          complete(filmsService.getAllPublic.map(_.toJson))
         } ~
           (path(IntNumber)) { id => {
             LOGGER.debug(s"Getting films with $id id")
@@ -78,5 +79,25 @@ trait FilmsApi extends FilmJsonMapping {
 
   }
 
+  val generalFilmsRoute: Route = {
+    pathPrefix("comments") {
+      commentsRoute
+    } ~
+      get {
+        path("directors") {
+          parameter("name") {
+            name =>
+              complete(filmsService.getFullFilmsByDirector(name).map(_.toJson))
+          }
+        } ~
+          parameter("name") { id =>
+            LOGGER.debug("Searching for the name")
+            complete(filmsService.getFullFilmsByName(id))
+          } ~ parameter("releaseDate") { date =>
+          LOGGER.debug("Searching for the release date")
+          complete(filmsService.getFullFilmsByDate(date))
+        }
+      }
+  }
 
 }

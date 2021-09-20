@@ -4,7 +4,7 @@ import by.bsu.model.dao.CountriesFilmsDAO
 import by.bsu.model.repository.CountryFilm
 
 class CountriesFilmsService(countriesFilmsDAO: CountriesFilmsDAO) {
-  def getByName(countryId: Int, filmId: Long) = {
+  def getByName(countryId: Int, filmId: Int) = {
     countriesFilmsDAO.findByName(countryId, filmId)
   }
 
@@ -20,7 +20,7 @@ class CountriesFilmsService(countriesFilmsDAO: CountriesFilmsDAO) {
     countriesFilmsDAO.insertListCountryFilm(countryFilmList)
   }
 
-  def deleteById(countryId: Int, filmId: Long) = {
+  def deleteById(countryId: Int, filmId: Int) = {
     countriesFilmsDAO.deleteById(countryId, filmId)
   }
 

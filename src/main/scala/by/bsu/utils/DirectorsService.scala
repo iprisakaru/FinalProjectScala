@@ -15,6 +15,10 @@ class DirectorsService(directorsDao: DirectorsDAO) {
     directorsDao.findAll()
   }
 
+  def getByName(name: String): Future[Option[Director]] = {
+    directorsDao.findByName(name)
+  }
+
   def create(country: Director): Future[Option[Director]] = {
     directorsDao.insert(country)
   }

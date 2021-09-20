@@ -1,14 +1,11 @@
 package by.bsu.model.dao
 
-import by.bsu.model.Db
-import by.bsu.model.repository.{ActorFilm, _}
-import by.bsu.utils.HelpFunctions
+import by.bsu.model.repository._
 import org.apache.log4j.Logger
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 import scala.language.postfixOps
 
 class FilmsDAO(override val config: DatabaseConfig[JdbcProfile])
@@ -65,8 +62,23 @@ class FilmsDAO(override val config: DatabaseConfig[JdbcProfile])
     db.run(films.filter(_.name === name).result.headOption)
   }
 
+  def findAllWithLanguage(): Future[Seq[(Film, Option[Language])]] = {
+    db.run(films.joinLeft(languages).on(_.languageId === _.language_id).result)
+  }
 
-  override def deleteAll(): Future[Int] = {
+  def findAllByName(name: String) = {
+    db.run(films.filter(_.name === name).joinLeft(languages).on(_.languageId === _.language_id).result)
+  }
+
+  def findAllByYear(releaseDate: String) = {
+    db.run(films.filter(_.releaseDate === releaseDate).joinLeft(languages).on(_.languageId === _.language_id).result)
+  }
+
+  def findAllById(id: Int): Future[Seq[(Film, Option[Language])]] = {
+    db.run(films.filter(_.filmId === id).joinLeft(languages).on(_.languageId === _.language_id).result)
+  }
+
+  def deleteAll(): Future[Int] = {
     db.run(films.delete)
   }
 

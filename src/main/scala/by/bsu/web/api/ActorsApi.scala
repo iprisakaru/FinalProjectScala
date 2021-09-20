@@ -20,7 +20,7 @@ trait ActorsApi extends ActorsJsonMapping {
 
   val actorsRoute: Route = {
     (path(IntNumber) & get) { id => {
-      LOGGER.debug(s"Getting genre with $id id")
+      LOGGER.debug(s" Getting genre with $id id")
       complete(actorsService.getById(id).map(_.get.toJson))
     }
     } ~

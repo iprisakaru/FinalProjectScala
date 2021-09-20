@@ -22,13 +22,13 @@ class DirectorsFilmsDAO(val config: DatabaseConfig[JdbcProfile])
   }
 
 
-  def deleteById(directorId: Int, filmId: Long): Future[Boolean] = {
+  def deleteById(directorId: Int, filmId: Int): Future[Boolean] = {
     db.run(directorsFilms.filter(data => (data.director_id === directorId) && (data.film_id === filmId)).delete) map {
       _ > 0
     }
   }
 
-  def deleteByFilmIdQuery(id: Long) = {
+  def deleteByFilmIdQuery(id: Int) = {
     directorsFilms.filter(e => e.film_id === id).delete
   }
 
@@ -36,8 +36,21 @@ class DirectorsFilmsDAO(val config: DatabaseConfig[JdbcProfile])
     db.run(directorsFilms.delete)
   }
 
-  def findByName(directorId: Int, filmId: Long): Future[Option[Long]] = {
+  def findByName(directorId: Int, filmId: Int): Future[Option[Int]] = {
     db.run(directorsFilms.filter(data => (data.director_id === directorId && data.film_id === filmId)).result.headOption.map(_.get.directorFilmId))
   }
 
+  def joinDirectorsToFilmsId() = {
+    db.run(directorsFilms.joinLeft(directors).on(_.director_id === _.director_id).result)
+      .map(_.groupBy(_._1.filmId))
+  }
+
+  def joinDirectorsToFilmId(id: Int) = {
+    db.run(directorsFilms.filter(_.film_id === id).joinLeft(directors).on(_.director_id === _.director_id).result)
+      .map(_.groupBy(_._1.filmId))
+  }
+
+  def findByDirectorId(id: Int): Future[Seq[DirectorFilm]] = {
+    db.run(directorsFilms.filter(_.director_id === id).result)
+  }
 }

@@ -2,7 +2,7 @@ package by.bsu.model.repository
 
 import by.bsu.model.Db
 
-case class GenreFilm(genreFilmId: Option[Long], genreId: Int, filmId: Long)
+case class GenreFilm(genreFilmId: Option[Int], genreId: Int, filmId: Int)
 
 trait GenresFilmsTable extends GenresTable with FilmsTable {
   this: Db =>
@@ -11,11 +11,11 @@ trait GenresFilmsTable extends GenresTable with FilmsTable {
 
   class GenresFilms(tag: Tag) extends Table[GenreFilm](tag, "genres_films") {
 
-    def genre_film_id = column[Option[Long]]("genre_film_id", O.PrimaryKey, O.AutoInc)
+    def genre_film_id = column[Option[Int]]("genre_film_id", O.PrimaryKey, O.AutoInc)
 
     def genre_id = column[Int]("genre_id", O.PrimaryKey)
 
-    def film_id = column[Long]("film_id", O.PrimaryKey)
+    def film_id = column[Int]("film_id", O.PrimaryKey)
 
     def fk_genre_id = foreignKey("fk_genre_id", genre_id, genres)(_.genre_id)
 

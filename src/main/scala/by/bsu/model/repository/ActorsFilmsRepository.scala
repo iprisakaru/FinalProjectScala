@@ -2,7 +2,7 @@ package by.bsu.model.repository
 
 import by.bsu.model.Db
 
-case class ActorFilm(actorFilmId: Option[Long], actorId: Int, filmId: Long)
+case class ActorFilm(actorFilmId: Option[Int], actorId: Int, filmId: Int)
 
 trait ActorsFilmsTable extends ActorsTable with FilmsTable {
   this: Db =>
@@ -11,11 +11,11 @@ trait ActorsFilmsTable extends ActorsTable with FilmsTable {
 
   class ActorsFilms(tag: Tag) extends Table[ActorFilm](tag, "actors_films") {
 
-    def actor_film_id = column[Option[Long]]("actor_film_id", O.PrimaryKey, O.AutoInc)
+    def actor_film_id = column[Option[Int]]("actor_film_id", O.PrimaryKey, O.AutoInc)
 
     def actor_id = column[Int]("actor_id")
 
-    def film_id = column[Long]("film_id")
+    def film_id = column[Int]("film_id")
 
     def fk_actor_id = foreignKey("fk_actor_id", actor_id, actors)(_.actor_id)
 

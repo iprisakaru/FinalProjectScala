@@ -6,7 +6,7 @@ import by.bsu.model.repository.ActorFilm
 import scala.concurrent.Future
 
 class ActorsFilmsService(actorsFilmsDao: ActorsFilmsDAO) {
-  def getByName(actorId: Int, filmId: Long) = {
+  def getByName(actorId: Int, filmId: Int) = {
     actorsFilmsDao.findByName(actorId, filmId)
   }
 
@@ -22,13 +22,12 @@ class ActorsFilmsService(actorsFilmsDao: ActorsFilmsDAO) {
     actorsFilmsDao.insertListActorFilm(actorFilmList)
   }
 
-  def deleteById(actorId: Int, filmId: Long) = {
+  def deleteById(actorId: Int, filmId: Int) = {
     actorsFilmsDao.deleteById(actorId, filmId)
   }
 
   def deleteAll() = {
     actorsFilmsDao.deleteAll()
   }
-
 
 }
