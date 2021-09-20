@@ -22,15 +22,11 @@ class CommentsDAO(val config: DatabaseConfig[JdbcProfile])
     LOGGER.debug(s"Inserting comment of user ${comment.userId} id")
     db.run(((comments returning comments) += comment).asTry).map(_.toOption)
   }
-
+ 
 
   def update(id: Int, comment: Comment): Future[Int] = {
     LOGGER.debug(s"Updating comment to comment $id id")
-    db.run(comments.filter(_.commentId === id).map(customer => (customer.header, customer.description,
-      customer.rating, customer.recommendedFilm1.?, customer.recommendedFilm2.?, customer.recommendedFilm3.?,
-      customer.recommendedFilm4.?, customer.recommendedFilm5.?))
-      .update(comment.header, comment.description, comment.rating, comment.recommendedFilm1, comment.recommendedFilm2,
-        comment.recommendedFilm3, comment.recommendedFilm4, comment.recommendedFilm5))
+    db.run(comments.filter(_.commentId === id).update(comment))
   }
 
   def findAll(): Future[Seq[Comment]] = db.run(comments.result)
