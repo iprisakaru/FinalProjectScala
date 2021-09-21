@@ -17,29 +17,21 @@ trait CommentsJsonMapping extends DefaultJsonProtocol {
 
 trait CommentsApi extends CommentsJsonMapping {
 
-  val commentsRoute: Route = {
+  def commentsRoute(filmId: Int): Route = {
     get {
-      path(IntNumber) {
-        filmId =>
-          complete(RouteService.commentsService.getByFilmId(filmId).map(_.toJson))
-      }
+      complete(RouteService.commentsService.getByFilmId(filmId).map(_.toJson))
     } ~ post {
       entity(as[Comment]) {
         entity =>
-          complete(RouteService.commentsService.create(entity).map(_.toJson))
+          complete(RouteService.commentsService.create(entity.copy(filmId = filmId)).map(_.toJson))
       }
     } ~ delete {
-      path(IntNumber) {
-        id =>
-          complete(RouteService.commentsService.deleteById(id).map(_.toJson))
-      }
+      complete(RouteService.commentsService.deleteById(filmId).map(_.toJson))
+
     } ~ put {
-      path(IntNumber) {
-        id =>
-          entity(as[Comment]) {
-            entity =>
-              complete(RouteService.commentsService.updateById(id, entity).map(_.toJson))
-          }
+      entity(as[Comment]) {
+        entity =>
+          complete(RouteService.commentsService.updateById(filmId, entity).map(_.toJson))
       }
     }
   }

@@ -28,7 +28,7 @@ object HTTPBasicAuth {
       case Some(BasicHttpCredentials(username, password)) =>
         onSuccess(authenticate(username, password)).flatMap {
           case Some(client) => provide(client)
-          case None => reject(AuthenticationFailedRejection(CredentialsRejected, challenge))
+          case None   => reject(AuthenticationFailedRejection(CredentialsRejected, challenge))
         }
       case _ => reject(AuthenticationFailedRejection(CredentialsMissing, challenge))
     }

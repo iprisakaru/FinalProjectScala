@@ -5,7 +5,8 @@ import org.apache.log4j.Logger
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
 
 class FilmsDAO(override val config: DatabaseConfig[JdbcProfile])
@@ -38,7 +39,8 @@ class FilmsDAO(override val config: DatabaseConfig[JdbcProfile])
     db.run(films.filter(_.filmId === id).map(_.public).update(Option(isVisible)))
   }
 
-  def findAll(isPublic: Boolean): Future[Seq[Film]] = db.run(films.filter(_.public === isPublic).result)
+  def findAll(isPublic: Boolean) = db.run(films.filter(_.public === isPublic)
+    .joinLeft(languages).on(_.languageId === _.language_id).result)
 
   def findAll() = {
     db.run(films.result)
@@ -48,6 +50,16 @@ class FilmsDAO(override val config: DatabaseConfig[JdbcProfile])
     db.run(films.delete) map {
       _ > 0
     }
+  }
+
+  def findAllByNameDate(name: String, date: String): Future[Seq[(Film, Option[Language])]] = {
+    db.run(films.filter(data => (data.name.startsWith(name) && data.releaseDate === date))
+      .joinLeft(languages).on(_.languageId === _.language_id).result)
+  }
+
+  def findAllByDate(date: String): Future[Seq[(Film, Option[Language])]] = {
+    db.run(films.filter(data => data.releaseDate === date)
+      .joinLeft(languages).on(_.languageId === _.language_id).result)
   }
 
   def deleteByFilmIdQuery(id: Int) = {
@@ -67,7 +79,7 @@ class FilmsDAO(override val config: DatabaseConfig[JdbcProfile])
   }
 
   def findAllByName(name: String) = {
-    db.run(films.filter(_.name === name).joinLeft(languages).on(_.languageId === _.language_id).result)
+    db.run(films.filter(_.name.startsWith(name)).joinLeft(languages).on(_.languageId === _.language_id).result)
   }
 
   def findAllByYear(releaseDate: String) = {

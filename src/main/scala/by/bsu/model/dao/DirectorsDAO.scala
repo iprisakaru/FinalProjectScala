@@ -44,7 +44,11 @@ class DirectorsDAO(val config: DatabaseConfig[JdbcProfile])
   }
 
   def findByName(name: String): Future[Option[Director]] = {
-    db.run(directors.filter(_.name === name).result.headOption)
+    db.run(directors.filter(_.name.startsWith(name)).result.headOption)
+  }
+
+  def findAllByName(name: String) = {
+    db.run(directors.filter(_.name.startsWith("name")).result)
   }
 
   def insert(entity: Director) = {

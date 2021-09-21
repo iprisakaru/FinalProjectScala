@@ -7,7 +7,8 @@ import by.bsu.web.api.UpdatingDataController
 import org.apache.log4j.Logger
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
 
 class FilmsService(filmsDAO: FilmsDAO) {
@@ -21,14 +22,14 @@ class FilmsService(filmsDAO: FilmsDAO) {
   private val directorsFilmsDAO = new DirectorsFilmsDAO(filmsDAO.config)
   private val genresFilmsDAO = new GenresFilmsDAO(filmsDAO.config)
 
-  def getAllPublic: Future[Seq[Film]] = {
+  def getAllPublic = {
     LOGGER.trace(s"Getting all public films")
-    filmsDAO.findAll(true)
+    filmsDAO.findAll(true).flatMap(getFullFilm)
   }
 
-  def getAllPrivate: Future[Seq[Film]] = {
+  def getAllPrivate = {
     LOGGER.trace(s"Getting all private films")
-    filmsDAO.findAll(false)
+    filmsDAO.findAll(false).flatMap(getFullFilm)
   }
 
   def getAll: Future[Seq[Film]] = {
@@ -66,14 +67,14 @@ class FilmsService(filmsDAO: FilmsDAO) {
 
   }
 
-  def getFullFilmsByName(name: String): Future[Seq[NewFilmWithFieldsId]] = {
+  def getFullByName(name: String): Future[Seq[NewFilmWithFieldsId]] = {
     LOGGER.debug(s"Getting all films by name: $name")
     val films: Future[Seq[(Film, Option[Language])]] = filmsDAO.findAllByName(name)
     films.map(films => LOGGER.debug(s"${films.size} films were gotten"))
     films.flatMap(getFullFilm)
   }
 
-  def getFullFilmsByDate(releaseDate: String): Future[Seq[NewFilmWithFieldsId]] = {
+  def getFullByDate(releaseDate: String): Future[Seq[NewFilmWithFieldsId]] = {
     LOGGER.debug(s"Getting all films by name: $releaseDate")
     val films = filmsDAO.findAllByYear(releaseDate)
     films.map(films => LOGGER.debug(s"${films.size} films were gotten"))
@@ -85,6 +86,49 @@ class FilmsService(filmsDAO: FilmsDAO) {
     val filmIds = director.flatMap(info => HelpFunctions.fOption(info.map(data => directorsFilmsService.getByDirectorId(data.id.get).map(_.map(_.filmId)))))
     val films = filmIds.flatMap(data => HelpFunctions.fOption(data.map(info => Future.sequence(info.map(data => filmsDAO.findAllById(data))))))
     films.flatMap(info => HelpFunctions.fOption(info.map(data => Future.sequence(data.map(getFullFilm)))))
+  }
+
+  def getFullByDirectorNameDate(directorName: String, filmName: String, releaseDate: String) = {
+    val directors = getFullFilmsByDirector(directorName).map(_.map(_.flatten))
+
+    val films = filmsDAO.findAllByNameDate(filmName, releaseDate).map(getFullFilm).flatten
+
+    val results = for{
+      dirFut <- directors
+      filmsFut <- films
+    } yield(dirFut.map(_.intersect(filmsFut)))
+
+    results.map(data=>data.filter(_.nonEmpty).get)
+  }
+
+  def getFullByDirectorName(directorName: String, filmName: String) = {
+    val directors = getFullFilmsByDirector(directorName).map(_.map(_.flatten))
+
+    val films = filmsDAO.findAllByName(filmName).map(getFullFilm).flatten
+
+    val results = for{
+      dirFut <- directors
+      filmsFut <- films
+    } yield(dirFut.map(_.intersect(filmsFut)))
+
+    results.map(data=>data.filter(_.nonEmpty).get)
+  }
+
+  def getFullByDirectorDate(directorName: String, date: String) = {
+    val directors = getFullFilmsByDirector(directorName).map(_.map(_.flatten))
+
+    val films = filmsDAO.findAllByDate(date).map(getFullFilm).flatten
+
+    val results = for{
+      dirFut <- directors
+      filmsFut <- films
+    } yield(dirFut.map(_.intersect(filmsFut)))
+
+    results.map(data=>data.filter(_.nonEmpty).get)
+  }
+
+  def getFullByNameDate(filmName: String, releaseDate: String): Future[Seq[NewFilmWithFieldsId]] = {
+    filmsDAO.findAllByNameDate(filmName, releaseDate).map(getFullFilm).flatten
   }
 
   private def getFullFilm(films: Seq[(Film, Option[Language])]): Future[Seq[NewFilmWithFieldsId]] = {

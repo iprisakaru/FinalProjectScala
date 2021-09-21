@@ -10,23 +10,29 @@ import by.bsu.web.api.auth.HTTPBasicAuth.{myAuthenticateBasicAsync, myAuthentica
 import scala.language.postfixOps
 
 
-trait Routes extends FilmsApi with GenresApi with DirectorsApi with ActorsApi {
+trait Routes extends FilmsApi with GenresApi with DirectorsApi with ActorsApi with CommentsApi {
   val routes: Route =
-    pathPrefix("films") {
-      generalFilmsRoute
-    } ~ myAuthenticateBasicAsync("none", myAuthenticator) {
+    myAuthenticateBasicAsync("none", myAuthenticator) {
       user =>
         LOGGER.debug(s"Admin $user makes request")
-        pathPrefix("a-films") {
+        pathPrefix("films") {
           filmRoute
-        } ~ pathPrefix("a-genres") {
+        } ~ pathPrefix("genres") {
           genreRoute
-        } ~ pathPrefix("a-directors") {
+        } ~ pathPrefix("directors") {
           directorRoute
-        } ~ pathPrefix("a-actors") {
+        } ~ pathPrefix("actors") {
           actorsRoute
-        } ~ pathPrefix("a-periodicity") {
+        } ~ pathPrefix("periodicity") {
           periodicRequest
         }
+    } ~ pathPrefix("films") {
+      generalFilmsRoute ~
+      pathPrefix(IntNumber / "comments") {
+        filmId =>
+          LOGGER.debug(s"Trying to write a comment to film $filmId id")
+          commentsRoute(filmId)
+      }
+
     }
 }

@@ -80,24 +80,37 @@ trait FilmsApi extends FilmJsonMapping with CommentsApi {
   }
 
   val generalFilmsRoute: Route = {
-    pathPrefix("comments") {
-      commentsRoute
-    } ~
-      get {
-        path("directors") {
-          parameter("name") {
-            name =>
-              complete(filmsService.getFullFilmsByDirector(name).map(_.toJson))
-          }
-        } ~
-          parameter("name") { id =>
-            LOGGER.debug("Searching for the name")
-            complete(filmsService.getFullFilmsByName(id))
-          } ~ parameter("releaseDate") { date =>
-          LOGGER.debug("Searching for the release date")
-          complete(filmsService.getFullFilmsByDate(date))
+    get {
+
+      path("directors") {
+        parameter("name") {
+          name =>
+            complete(filmsService.getFullFilmsByDirector(name).map(_.toJson))
         }
+      } ~
+        parameter("name", "releaseDate", "directorName") { (name, date, directorName) =>
+          LOGGER.debug(s"Searching with params: name $name, date: $date, director name: $directorName")
+          complete(filmsService.getFullByDirectorNameDate(directorName, name, date).map(_.toJson))
+        } ~ parameter("name", "releaseDate") {
+        (name, date) =>
+          complete(filmsService.getFullByNameDate(name, date))
+      } ~ parameter("name", "directorName") {
+        (name, directorName) =>
+          complete(filmsService.getFullByDirectorName(directorName, name).map(_.toJson))
+      } ~ parameter("releaseDate", "directorName") {
+        (date, directorName) =>
+          complete(filmsService.getFullByDirectorDate(directorName, date).map(_.toJson))
+      } ~ parameter("releaseDate") {
+        (date) =>
+          complete(filmsService.getFullByDate(date).map(_.toJson))
+      } ~ parameter("name") {
+        (name) =>
+          LOGGER.debug(s"Getting film by name $name")
+          complete(filmsService.getFullByName(name).map(_.toJson))
+      } ~ {
+        complete(filmsService.getAllPublic.map(_.toJson))
       }
+    }
   }
 
 }
