@@ -27,12 +27,14 @@ trait Routes extends FilmsApi with GenresApi with DirectorsApi with ActorsApi wi
           periodicRequest
         }
     } ~ pathPrefix("films") {
-      generalFilmsRoute ~
-      pathPrefix(IntNumber / "comments") {
-        filmId =>
-          LOGGER.debug(s"Trying to write a comment to film $filmId id")
-          commentsRoute(filmId)
-      }
 
+      pathPrefix(IntNumber) {
+        filmId =>
+          pathPrefix("comments") {
+            LOGGER.debug(s"Trying to write a comment to film $filmId id")
+            commentsRoute(filmId)
+          }
+      } ~
+        generalFilmsRoute
     }
 }
