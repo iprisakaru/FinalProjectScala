@@ -35,8 +35,8 @@ class AdminsDAO(val config: DatabaseConfig[JdbcProfile])
   }
 
 
-  def getPassword(username: String): Future[Admin] = {
-    db.run(admins.filter(data => (data.username === username)).result.head)
+  def getPassword(username: String): Future[Option[Admin]] = {
+    db.run(admins.filter(data => (data.username === username)).result.head.asTry).map(_.toOption)
   }
 
 
