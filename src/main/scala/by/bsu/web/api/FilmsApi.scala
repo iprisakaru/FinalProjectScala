@@ -1,11 +1,11 @@
 package by.bsu.web.api
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-import akka.http.scaladsl.server.Directives.{pathPrefix, _}
-import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.{RequestContext, Route}
 import by.bsu.Application.LOGGER
 import by.bsu.model.repository.{Film, NewFilmWithFields, NewFilmWithFieldsId, NewFilmWithId}
-import by.bsu.utils.RouteService.{commentsService, filmsService}
+import by.bsu.utils.RouteService.filmsService
 import spray.json.{DefaultJsonProtocol, RootJsonFormat, enrichAny}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -49,6 +49,15 @@ trait FilmsApi extends FilmJsonMapping with CommentsApi {
         }
       } ~
       post {
+
+        extractRequestContext { ctx: RequestContext =>
+          fileUpload("csv") {
+            case (metadata, byteSource) =>
+              LOGGER.debug(s"File ${metadata.fileName} with format ${metadata.contentType}")
+              complete(filmsService.parseCSVtoFilm(byteSource, ctx))
+
+          }
+        } ~
         path("help") {
           filmHelpRoute
         } ~
@@ -111,5 +120,6 @@ trait FilmsApi extends FilmJsonMapping with CommentsApi {
       }
     }
   }
+
 
 }

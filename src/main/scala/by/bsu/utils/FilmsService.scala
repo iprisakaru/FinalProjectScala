@@ -1,5 +1,8 @@
 package by.bsu.utils
 
+import akka.http.scaladsl.server.RequestContext
+import akka.stream.scaladsl.{Sink, Source}
+import akka.util.ByteString
 import by.bsu.model.dao._
 import by.bsu.model.repository._
 import by.bsu.utils.RouteService._
@@ -7,9 +10,9 @@ import by.bsu.web.api.UpdatingDataController
 import org.apache.log4j.Logger
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 import scala.language.postfixOps
+import scala.util.Try
 
 class FilmsService(filmsDAO: FilmsDAO) {
 
@@ -93,12 +96,12 @@ class FilmsService(filmsDAO: FilmsDAO) {
 
     val films = filmsDAO.findAllByNameDate(filmName, releaseDate).map(getFullFilm).flatten
 
-    val results = for{
+    val results = for {
       dirFut <- directors
       filmsFut <- films
-    } yield(dirFut.map(_.intersect(filmsFut)))
+    } yield (dirFut.map(_.intersect(filmsFut)))
 
-    results.map(data=>data.filter(_.nonEmpty).get)
+    results.map(data => data.filter(_.nonEmpty).get)
   }
 
   def getFullByDirectorName(directorName: String, filmName: String) = {
@@ -106,12 +109,12 @@ class FilmsService(filmsDAO: FilmsDAO) {
 
     val films = filmsDAO.findAllByName(filmName).map(getFullFilm).flatten
 
-    val results = for{
+    val results = for {
       dirFut <- directors
       filmsFut <- films
-    } yield(dirFut.map(_.intersect(filmsFut)))
+    } yield (dirFut.map(_.intersect(filmsFut)))
 
-    results.map(data=>data.filter(_.nonEmpty).get)
+    results.map(data => data.filter(_.nonEmpty).get)
   }
 
   def getFullByDirectorDate(directorName: String, date: String) = {
@@ -119,12 +122,12 @@ class FilmsService(filmsDAO: FilmsDAO) {
 
     val films = filmsDAO.findAllByDate(date).map(getFullFilm).flatten
 
-    val results = for{
+    val results = for {
       dirFut <- directors
       filmsFut <- films
-    } yield(dirFut.map(_.intersect(filmsFut)))
+    } yield (dirFut.map(_.intersect(filmsFut)))
 
-    results.map(data=>data.filter(_.nonEmpty).get)
+    results.map(data => data.filter(_.nonEmpty).get)
   }
 
   def getFullByNameDate(filmName: String, releaseDate: String): Future[Seq[NewFilmWithFieldsId]] = {
@@ -228,26 +231,7 @@ class FilmsService(filmsDAO: FilmsDAO) {
     val filmData = getFilmByNameAndYear(newFilm.name, newFilm.releaseDate.toInt)
     LOGGER.trace("Checking fields for None")
     val result = replaceEmptyFilm(newFilm, filmData)
-    val creationOfActors = result.map(_.actors.get).map(_.map(name => Actor(None, name))).flatMap(actor => actorsService.createList(actor)).map(_.map(_.map(_.id.get)))
-    val creationOfGenres = result.map(_.genres.get).map(_.map(name => Genre(None, name))).flatMap(value => genresService.createList(value)).map(_.map(_.map(_.id.get)))
-    val creationOfCountries = result.map(_.countries.get).map(_.map(name => Country(None, name))).flatMap(value => countriesService.createList(value)).map(_.map(_.map(_.id.get)))
-    val creationOfDirectors = result.map(_.directors.get).map(_.map(name => Director(None, name))).flatMap(value => directorsService.createList(value)).map(_.map(_.map(_.id.get)))
-    val creationOfLanguages = result.map(_.languageName.get).flatMap(value => languagesService.create(Language(None, value))).map(_.map(_.id.get))
-
-    val creationOfFilms = for {
-      resultFut <- result
-      creationOfActorsFut <- creationOfActors.filter(_.nonEmpty).map(data => Option(data.map(_.get)))
-      creationOfGenresFut <- creationOfGenres.filter(_.nonEmpty).map(data => Option(data.map(_.get)))
-      creationOfCountriesFut <- creationOfCountries.filter(_.nonEmpty).map(data => Option(data.map(_.get)))
-      creationOfDirectorsFut <- creationOfDirectors.filter(_.nonEmpty).map(data => Option(data.map(_.get)))
-      creationOfLanguagesFut <- creationOfLanguages
-
-    } yield (createWithoutFilling(NewFilmWithId(None, resultFut.name, resultFut.ageLimit, creationOfActorsFut,
-      creationOfGenresFut, creationOfCountriesFut, creationOfDirectorsFut, resultFut.shortDescription,
-      resultFut.timing, resultFut.image, resultFut.releaseDate, resultFut.awards, creationOfLanguagesFut, Option(false))))
-
-
-    creationOfFilms.flatten
+    result.flatMap(insertFilmWithFields)
   }
 
   def replaceEmptyFilm(newFilm: NewFilmWithFields, filmData: Future[NewFilmWithFields]): Future[NewFilmWithFields] = {
@@ -296,5 +280,54 @@ class FilmsService(filmsDAO: FilmsDAO) {
     LOGGER.trace(s"Trying to load genres from API")
     val data = updateDataController.periodicUpdateData()
     data._1.map(_.map(name => NewFilmWithId(None, name, None, None, None, None, None, None, None, None, data._2, None, None, Option(false))))
+  }
+
+
+  def parseCSVtoFilm(source: Source[ByteString, Any], ctx: RequestContext) = {
+    implicit val materializer = ctx.materializer
+
+    val sink = Sink.fold[String, ByteString]("") { case (acc, str) =>
+      acc + str.decodeString("US-ASCII")
+    }
+    val list = source.runWith(sink).map(_.split("\n").toSeq)
+    val naming = list.map(_.head.split(",").map(_.replaceAll("\r", "")).toSeq)
+    val data = list.map(_.tail.map(_.split("\"").filter(info => info != "," && info != "\r").map(_.split(",").toSeq).toSeq))
+    val result = for {
+      namingMapFut <- naming.map(_.filter(info => info != "genres" && info != "countries" && info != "actors" && info != "directors").zipWithIndex.toMap)
+      nameEntitiesFut <- naming.map(_.filter(info => info == "genres" || info == "countries" || info == "actors" || info == "directors").zipWithIndex.toMap)
+
+      nameFut <- data.map(_.map(info => NewFilmWithFields(None, info.head(namingMapFut("name")),
+        Try(info.head(namingMapFut("ageLimit"))).toOption, Try(info(nameEntitiesFut("actors") + 1)).toOption,
+        Try(info(nameEntitiesFut("genres") + 1)).toOption, Try(info(nameEntitiesFut("countries") + 1)).toOption, Try(info(nameEntitiesFut("directors") + 1)).toOption,
+        Try(info.head(namingMapFut("shortDecription"))).toOption, Try(info.head(namingMapFut("timing"))).toOption, Try(info.head(namingMapFut("image"))).toOption,
+        info.head(namingMapFut("releaseDate")), Try(info.head(namingMapFut("awards"))).toOption, Try(info.head(namingMapFut("languages"))).toOption, Option(false))))
+
+
+    } yield (nameFut)
+    result.flatMap(info => Future.sequence(info.map(insertFilmWithFields))).map(_.map(Option(_)))
+
+  }
+
+  def insertFilmWithFields(film: NewFilmWithFields): Future[NewFilmWithId] = {
+    val creationOfActors = HelpFunctions.fOption(film.actors.map(info => Future.sequence(info.map(name => Actor(None, name)).map(actorsService.create))).map(_.map(_.map(_.get.id.get))))
+    val creationOfGenres = HelpFunctions.fOption(film.genres.map(info => Future.sequence(info.map(name => Genre(None, name)).map(genresService.create))).map(_.map(_.map(_.get.id.get))))
+    val creationOfCountries = HelpFunctions.fOption(film.countries.map(info => Future.sequence(info.map(name => Country(None, name)).map(countriesService.create))).map(_.map(_.map(_.get.id.get))))
+    val creationOfDirectors = HelpFunctions.fOption(film.directors.map(info => Future.sequence(info.map(name => Director(None, name)).map(directorsService.create))).map(_.map(_.map(_.get.id.get))))
+    val creationOfLanguages = languagesService.create(Language(None, film.languageName.get)).map(_.map(_.id.get))
+
+    val creationOfFilms = for {
+
+      creationOfActorsFut <- creationOfActors
+      creationOfGenresFut <- creationOfGenres
+      creationOfCountriesFut <- creationOfCountries
+      creationOfDirectorsFut <- creationOfDirectors
+      creationOfLanguagesFut <- creationOfLanguages
+
+    } yield (createWithoutFilling(NewFilmWithId(None, film.name, film.ageLimit, creationOfActorsFut,
+      creationOfGenresFut, creationOfCountriesFut, creationOfDirectorsFut, film.shortDescription,
+      film.timing, film.image, film.releaseDate, film.awards, creationOfLanguagesFut, Option(false))))
+
+
+    creationOfFilms.flatten
   }
 }

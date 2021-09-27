@@ -1,6 +1,6 @@
 package by.bsu.web
 
-import akka.http.scaladsl.model.StatusCodes.BadRequest
+import akka.http.scaladsl.model.StatusCodes.Unauthorized
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{AuthorizationFailedRejection, RejectionHandler, Route}
@@ -11,34 +11,20 @@ import by.bsu.web.api.auth.JsonHelper
 
 import scala.language.postfixOps
 
-
 trait Routes extends FilmsApi with GenresApi with DirectorsApi with ActorsApi with CommentsApi with JsonHelper {
 
   implicit def rejectionHandler =
     RejectionHandler.newBuilder()
       .handle { case AuthorizationFailedRejection =>
         LOGGER.debug("there")
-        val errorResponse = write(ErrorResponse(BadRequest.intValue, "Authorization", "The authorization check failed for you. Access Denied."))
-        complete(HttpResponse(BadRequest, entity = HttpEntity(ContentTypes.`application/json`, errorResponse)))
+        val errorResponse = write(ErrorResponse(Unauthorized.intValue, "Authorization", "The authorization check failed for you. Access Denied."))
+        complete(HttpResponse(Unauthorized, entity = HttpEntity(ContentTypes.`application/json`, errorResponse)))
       }
       .result()
 
   val routes =
     Route.seal(
-      myAuthenticateBasicAsync("none", myAuthenticator) {
-        user =>
-          pathPrefix("films") {
-            filmRoute
-          } ~ pathPrefix("genres") {
-            genreRoute
-          } ~ pathPrefix("directors") {
-            directorRoute
-          } ~ pathPrefix("actors") {
-            actorsRoute
-          } ~ pathPrefix("periodicity") {
-            periodicRequest
-          }
-      }~ pathPrefix("films") {
+      pathPrefix("films") {
 
         pathPrefix(IntNumber) {
           filmId =>
@@ -48,9 +34,22 @@ trait Routes extends FilmsApi with GenresApi with DirectorsApi with ActorsApi wi
             }
         } ~
           generalFilmsRoute
-      }
+      } ~
+        myAuthenticateBasicAsync("none", myAuthenticator) {
+          user =>
+            pathPrefix("films") {
+              filmRoute
+            } ~ pathPrefix("genres") {
+              genreRoute
+            } ~ pathPrefix("directors") {
+              directorRoute
+            } ~ pathPrefix("actors") {
+              actorsRoute
+            } ~ pathPrefix("periodicity") {
+              periodicRequest
+            }
+        }
     )
-
 
 
 }
