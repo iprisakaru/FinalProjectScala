@@ -32,8 +32,7 @@ trait Routes extends FilmsApi with GenresApi with DirectorsApi with ActorsApi wi
               LOGGER.debug(s"Trying to write a comment to film $filmId id")
               commentsRoute(filmId)
             }
-        } ~
-          generalFilmsRoute
+        }
       } ~
         myAuthenticateBasicAsync("none", myAuthenticator) {
           user =>
@@ -45,10 +44,11 @@ trait Routes extends FilmsApi with GenresApi with DirectorsApi with ActorsApi wi
               directorRoute
             } ~ pathPrefix("actors") {
               actorsRoute
-            } ~ pathPrefix("periodicity") {
+            } ~ pathPrefix("job") {
               periodicRequest
             }
-        }
+        }~
+        generalFilmsRoute
     )
 
 

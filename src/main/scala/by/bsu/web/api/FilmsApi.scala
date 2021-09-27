@@ -1,13 +1,17 @@
 package by.bsu.web.api
 
+
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{RequestContext, Route}
+import akka.stream.scaladsl.FileIO
 import by.bsu.Application.LOGGER
 import by.bsu.model.repository.{Film, NewFilmWithFields, NewFilmWithFieldsId, NewFilmWithId}
 import by.bsu.utils.RouteService.filmsService
 import spray.json.{DefaultJsonProtocol, RootJsonFormat, enrichAny}
 
+import java.nio.file.Paths
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.postfixOps
 
@@ -28,13 +32,13 @@ trait FilmsApi extends FilmJsonMapping with CommentsApi {
       }
     } ~
       get {
-        path("private") {
-          LOGGER.debug("Getting all private films")
-          complete(filmsService.getAllPrivate)
-        } ~ {
-          LOGGER.debug("Getting all public films")
-          complete(filmsService.getAllPublic.map(_.toJson))
+        path("file-example") {
+          complete(HttpEntity(ContentTypes.`text/csv(UTF-8)`, FileIO.fromPath(Paths.get("src/main/resources/films-file-example.csv"))))
         } ~
+          path("private") {
+            LOGGER.debug("Getting all private films")
+            complete(filmsService.getAllPrivate)
+          } ~
           (path(IntNumber)) { id => {
             LOGGER.debug(s"Getting films with $id id")
             complete(filmsService.getById(id).map(_.toJson))
@@ -58,9 +62,9 @@ trait FilmsApi extends FilmJsonMapping with CommentsApi {
 
           }
         } ~
-        path("help") {
-          filmHelpRoute
-        } ~
+          path("help") {
+            filmHelpRoute
+          } ~
           entity(as[NewFilmWithId]) { entity => {
             LOGGER.debug(s"Creating a new film with ${entity.id} id")
             complete(filmsService.createWithoutFilling(entity).map(_.toJson))
