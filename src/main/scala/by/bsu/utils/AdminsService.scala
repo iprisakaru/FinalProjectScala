@@ -8,7 +8,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class AdminsService(adminsDAO: AdminsDAO) {
 
   def getPassword(username: String) = {
-    adminsDAO.getPassword(username).map(_.password)
+    adminsDAO.getPassword(username).map(_.map(_.password))
   }
 
   def create(admin: Admin) = {

@@ -23,7 +23,7 @@ libraryDependencies ++= Seq(
   "org.joda" % "joda-convert" % "1.7",
   "com.typesafe" % "config" % "1.4.1",
   "com.lightbend.akka" %% "akka-stream-alpakka-csv" % "3.0.3",
-  "io.spray" %%  "spray-json" % "1.3.6",
+  "io.spray" %% "spray-json" % "1.3.6",
   "org.slf4j" % "slf4j-simple" % "1.7.32" % Test,
   "log4j" % "log4j" % "1.2.14",
   "org.typelevel" %% "cats-core" % "2.6.1",

@@ -41,7 +41,7 @@ class LanguagesDAO(val config: DatabaseConfig[JdbcProfile])
   }
 
   def insert(entity: Language): Future[Option[Language]] = {
-    LOGGER.debug(s"Inserting admin ${entity.name}")
+    LOGGER.debug(s"Inserting language ${entity.name}")
     val result = db.run(((languages returning languages) += entity).asTry).map(_.toOption)
     result.map(data => {
       if (data.nonEmpty) Future(data)

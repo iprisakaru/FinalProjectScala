@@ -23,4 +23,8 @@ object RouteService {
 
   val adminsService = new AdminsService(new AdminsDAO(dbConfig))
   val commentsService = new CommentsService(new CommentsDAO(dbConfig))
+
+  //parsers
+
+  val filmsParserService = new ParserService
 }
