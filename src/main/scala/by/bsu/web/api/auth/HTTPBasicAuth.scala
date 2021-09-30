@@ -10,7 +10,7 @@ import org.apache.log4j.Logger
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-object HTTPBasicAuth extends JsonHelper {
+object HTTPBasicAuth  {
 
   val LOGGER = Logger.getLogger(this.getClass.getName)
 

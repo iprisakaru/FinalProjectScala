@@ -8,7 +8,7 @@ import akka.http.scaladsl.server.{RequestContext, Route}
 import akka.stream.scaladsl.FileIO
 import by.bsu.Application.LOGGER
 import by.bsu.model.repository.{Film, NewFilmWithFields, NewFilmWithFieldsId, NewFilmWithId}
-import by.bsu.utils.RouteService.filmsService
+import by.bsu.utils.RouteService.{filmsParserService, filmsService}
 import spray.json.{DefaultJsonProtocol, RootJsonFormat, enrichAny}
 
 import java.nio.file.Paths
@@ -58,7 +58,7 @@ trait FilmsApi extends FilmJsonMapping with CommentsApi {
           fileUpload("csv") {
             case (metadata, byteSource) =>
               LOGGER.debug(s"File ${metadata.fileName} with format ${metadata.contentType}")
-              complete(filmsService.parseCSVtoFilm(byteSource, ctx))
+              complete(filmsParserService.parseCSVtoFilm(byteSource, ctx))
 
           }
         } ~

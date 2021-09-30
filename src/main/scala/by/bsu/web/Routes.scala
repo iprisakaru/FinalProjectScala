@@ -6,19 +6,17 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{AuthorizationFailedRejection, RejectionHandler, Route}
 import by.bsu.Application.LOGGER
 import by.bsu.web.api._
-import by.bsu.web.api.auth.HTTPBasicAuth.{ErrorResponse, myAuthenticateBasicAsync, myAuthenticator}
-import by.bsu.web.api.auth.JsonHelper
+import by.bsu.web.api.auth.HTTPBasicAuth.{myAuthenticateBasicAsync, myAuthenticator}
 
 import scala.language.postfixOps
 
-trait Routes extends FilmsApi with GenresApi with DirectorsApi with ActorsApi with CommentsApi with JsonHelper {
+trait Routes extends FilmsApi with GenresApi with DirectorsApi with ActorsApi with CommentsApi {
 
   implicit def rejectionHandler =
     RejectionHandler.newBuilder()
       .handle { case AuthorizationFailedRejection =>
-        LOGGER.debug("there")
-        val errorResponse = write(ErrorResponse(Unauthorized.intValue, "Authorization", "The authorization check failed for you. Access Denied."))
-        complete(HttpResponse(Unauthorized, entity = HttpEntity(ContentTypes.`application/json`, errorResponse)))
+        val m = s"${Unauthorized.intValue}\nAuthorization\nThe authorization check failed for you. Access Denied."
+        complete(HttpResponse(Unauthorized, entity = HttpEntity(ContentTypes.`application/json`, m)))
       }
       .result()
 
@@ -47,7 +45,7 @@ trait Routes extends FilmsApi with GenresApi with DirectorsApi with ActorsApi wi
             } ~ pathPrefix("job") {
               periodicRequest
             }
-        }~
+        } ~
         generalFilmsRoute
     )
 

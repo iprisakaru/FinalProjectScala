@@ -13,7 +13,6 @@ flywayLocations += "db/migration"
 flywayBaselineOnMigrate := true
 
 libraryDependencies ++= Seq(
-  "net.liftweb" %% "lift-json" % "3.4.3",
   "com.github.t3hnar" %% "scala-bcrypt" % "4.1",
   "org.postgresql" % "postgresql" % "42.2.23",
   "org.hsqldb" % "hsqldb" % "2.6.0",
