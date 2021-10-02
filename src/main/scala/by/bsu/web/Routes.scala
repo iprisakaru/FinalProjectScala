@@ -6,24 +6,18 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{AuthorizationFailedRejection, RejectionHandler, Route}
 import by.bsu.Application.LOGGER
 import by.bsu.web.api._
+import by.bsu.web.api.auth.Auth2.{myAuthenticateOAuthAsync, myAuthenticatorOAuth}
 import by.bsu.web.api.auth.HTTPBasicAuth.{myAuthenticateBasicAsync, myAuthenticator}
 
 import scala.language.postfixOps
 
-trait Routes extends FilmsApi with GenresApi with DirectorsApi with ActorsApi with CommentsApi {
+trait Routes extends FilmsApi with AuthApi with GenresApi
+  with DirectorsApi with ActorsApi with CommentsApi {
 
-  implicit def rejectionHandler =
-    RejectionHandler.newBuilder()
-      .handle { case AuthorizationFailedRejection =>
-        val m = s"${Unauthorized.intValue}\nAuthorization\nThe authorization check failed for you. Access Denied."
-        complete(HttpResponse(Unauthorized, entity = HttpEntity(ContentTypes.`application/json`, m)))
-      }
-      .result()
 
   val routes =
     Route.seal(
       pathPrefix("films") {
-
         pathPrefix(IntNumber) {
           filmId =>
             pathPrefix("comments") {
@@ -51,3 +45,5 @@ trait Routes extends FilmsApi with GenresApi with DirectorsApi with ActorsApi wi
 
 
 }
+
+

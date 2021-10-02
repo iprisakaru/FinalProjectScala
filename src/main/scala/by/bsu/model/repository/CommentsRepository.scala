@@ -7,7 +7,7 @@ case class Comment(commentId: Option[Int], header: String, description: String, 
                    recommendedFilm2: Option[Int], recommendedFilm3: Option[Int],
                    recommendedFilm4: Option[Int], recommendedFilm5: Option[Int])
 
-trait CommentsTable extends FilmsTable with UsersTable {
+trait CommentsTable extends FilmsTable with GithubUsersTable {
   this: Db =>
 
   import config.driver.api._
@@ -49,7 +49,7 @@ trait CommentsTable extends FilmsTable with UsersTable {
 
     def fkRecommendedFilm5 = foreignKey("fk_recommended_film_5", recommendedFilm5, films)(_.filmId)
 
-    def fkUserId = foreignKey("fk_user_id", userId, users)(_.user_id)
+    def fkUserId = foreignKey("fk_user_id", userId, githubUsers)(_.githubUserId)
 
     def * = (commentId.?, header, description, rating, recommended, userId, filmId, recommendedFilm1.?,
       recommendedFilm2.?, recommendedFilm3.?, recommendedFilm4.?, recommendedFilm5.?) <> (Comment.tupled, Comment.unapply)

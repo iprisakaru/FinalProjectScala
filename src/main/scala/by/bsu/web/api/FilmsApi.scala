@@ -9,6 +9,7 @@ import akka.stream.scaladsl.FileIO
 import by.bsu.Application.LOGGER
 import by.bsu.model.repository.{Film, NewFilmWithFields, NewFilmWithFieldsId, NewFilmWithId}
 import by.bsu.utils.RouteService.{filmsParserService, filmsService}
+import by.bsu.web.api.rejections.CustomRejectionHandler
 import spray.json.{DefaultJsonProtocol, RootJsonFormat, enrichAny}
 
 import java.nio.file.Paths
@@ -22,7 +23,7 @@ trait FilmJsonMapping extends DefaultJsonProtocol {
   implicit val film4Format: RootJsonFormat[NewFilmWithFieldsId] = jsonFormat14(NewFilmWithFieldsId.apply)
 }
 
-trait FilmsApi extends FilmJsonMapping with CommentsApi {
+trait FilmsApi extends FilmJsonMapping with CommentsApi with CustomRejectionHandler{
   val filmRoute: Route = {
     delete {
       (path(IntNumber)) { id => {

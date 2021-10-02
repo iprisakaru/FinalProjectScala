@@ -13,6 +13,7 @@ flywayLocations += "db/migration"
 flywayBaselineOnMigrate := true
 
 libraryDependencies ++= Seq(
+  "org.apache.httpcomponents.client5" % "httpclient5" % "5.1",
   "com.github.t3hnar" %% "scala-bcrypt" % "4.1",
   "org.postgresql" % "postgresql" % "42.2.23",
   "org.hsqldb" % "hsqldb" % "2.6.0",

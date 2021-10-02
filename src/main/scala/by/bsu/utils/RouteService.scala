@@ -12,6 +12,7 @@ object RouteService {
   val genresService = new GenresService(new GenresDAO(dbConfig))
   val countriesService = new CountriesService(new CountriesDAO(dbConfig))
   val actorsService = new ActorsService(new ActorsDAO(dbConfig))
+  val githubUsersService = new GithubUserService(new GithubUsersDAO(dbConfig))
 
   //additional tables
   val directorsFilmsService = new DirectorsFilmsService(new DirectorsFilmsDAO(dbConfig))
@@ -25,6 +26,6 @@ object RouteService {
   val commentsService = new CommentsService(new CommentsDAO(dbConfig))
 
   //parsers
-
+  val authService = new AuthService
   val filmsParserService = new ParserService
 }
