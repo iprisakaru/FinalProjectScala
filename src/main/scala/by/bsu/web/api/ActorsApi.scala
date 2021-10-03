@@ -19,7 +19,7 @@ trait ActorsJsonMapping extends DefaultJsonProtocol {
 trait ActorsApi extends ActorsJsonMapping {
 
   val actorsRoute: Route = {
-    (path(IntNumber) & get) { id => {
+    (pathPrefix(IntNumber) & get) { id => {
       LOGGER.debug(s" Getting genre with $id id")
       complete(actorsService.getById(id).map(_.get.toJson))
     }
@@ -28,14 +28,14 @@ trait ActorsApi extends ActorsJsonMapping {
         LOGGER.debug("Getting all genres")
         complete(actorsService.getAll().map(_.toJson))
       } ~
-      (path(IntNumber) & put) { id =>
+      (pathPrefix(IntNumber) & put) { id =>
         entity(as[Actor]) { entity => {
           LOGGER.debug(s"Updating a new genre with $id id")
           complete(actorsService.update(id, entity).map(_.toJson))
         }
         }
       } ~
-      (path(IntNumber) & delete) { id => {
+      (pathPrefix(IntNumber) & delete) { id => {
         LOGGER.debug(s"Deleting a genre with $id id")
         complete(actorsService.deleteById(id).map(_.toJson))
       }

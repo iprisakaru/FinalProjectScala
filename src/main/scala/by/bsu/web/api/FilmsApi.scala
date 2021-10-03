@@ -3,7 +3,7 @@ package by.bsu.web.api
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
-import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Directives.{entity, _}
 import akka.http.scaladsl.server.{RequestContext, Route}
 import akka.stream.scaladsl.FileIO
 import by.bsu.Application.LOGGER
@@ -23,30 +23,30 @@ trait FilmJsonMapping extends DefaultJsonProtocol {
   implicit val film4Format: RootJsonFormat[NewFilmWithFieldsId] = jsonFormat14(NewFilmWithFieldsId.apply)
 }
 
-trait FilmsApi extends FilmJsonMapping with CommentsApi with CustomRejectionHandler{
+trait FilmsApi extends FilmJsonMapping with CommentsApi with CustomRejectionHandler {
   val filmRoute: Route = {
     delete {
-      (path(IntNumber)) { id => {
+      (pathPrefix(IntNumber)) { id => {
         LOGGER.debug(s"Deleting a film with $id id")
         complete(filmsService.deleteById(id).map(_.toJson))
       }
       }
     } ~
       get {
-        path("file-example") {
+        pathPrefix("file-example") {
           complete(HttpEntity(ContentTypes.`text/csv(UTF-8)`, FileIO.fromPath(Paths.get("src/main/resources/films-file-example.csv"))))
         } ~
-          path("private") {
+          pathPrefix("private") {
             LOGGER.debug("Getting all private films")
             complete(filmsService.getAllPrivate)
           } ~
-          (path(IntNumber)) { id => {
+          (pathPrefix(IntNumber)) { id => {
             LOGGER.debug(s"Getting films with $id id")
             complete(filmsService.getById(id).map(_.toJson))
           }
           }
       } ~
-      (path(IntNumber) & put) { id =>
+      (pathPrefix(IntNumber) & put) { id =>
         entity(as[Film]) { entity => {
           LOGGER.debug(s"Updating a new film with $id id")
           complete(filmsService.updateById(id, entity).map(_.toJson))
@@ -54,26 +54,25 @@ trait FilmsApi extends FilmJsonMapping with CommentsApi with CustomRejectionHand
         }
       } ~
       post {
-
-        extractRequestContext { ctx: RequestContext =>
-          fileUpload("csv") {
-            case (metadata, byteSource) =>
-              LOGGER.debug(s"File ${metadata.fileName} with format ${metadata.contentType}")
-              complete(filmsParserService.parseCSVtoFilm(byteSource, ctx))
-
-          }
+        entity(as[NewFilmWithId]) { entity => {
+          LOGGER.debug(s"Creating a new film with ${entity.id} id")
+          complete(filmsService.createWithoutFilling(entity).map(_.toJson))
+        }
         } ~
-          path("help") {
-            filmHelpRoute
+          extractRequestContext { ctx: RequestContext =>
+            fileUpload("csv") {
+              case (metadata, byteSource) =>
+                LOGGER.debug(s"File ${metadata.fileName} with format ${metadata.contentType}")
+                complete(filmsParserService.parseCSVtoFilm(byteSource, ctx))
+
+            }
           } ~
-          entity(as[NewFilmWithId]) { entity => {
-            LOGGER.debug(s"Creating a new film with ${entity.id} id")
-            complete(filmsService.createWithoutFilling(entity).map(_.toJson))
-          }
+          pathPrefix("help") {
+            filmHelpRoute
           }
       } ~
       put {
-        path("public" / IntNumber) {
+        pathPrefix("public" / IntNumber) {
           id =>
             LOGGER.debug(s"Making film $id id public")
             complete(filmsService.makePublic(id).map(_.toJson))
@@ -95,7 +94,7 @@ trait FilmsApi extends FilmJsonMapping with CommentsApi with CustomRejectionHand
 
   val generalFilmsRoute: Route = {
     get {
-      path("directors") {
+      pathPrefix("directors") {
         parameter("name") {
           name =>
             complete(filmsService.getFullFilmsByDirector(name).map(_.toJson))
@@ -120,7 +119,7 @@ trait FilmsApi extends FilmJsonMapping with CommentsApi with CustomRejectionHand
         (name) =>
           LOGGER.debug(s"Getting film by name $name")
           complete(filmsService.getFullByName(name).map(_.toJson))
-      } ~ {
+      } ~ pathPrefix("public") {
         complete(filmsService.getAllPublic.map(_.toJson))
       }
     }

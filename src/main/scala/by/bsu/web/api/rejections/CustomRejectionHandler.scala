@@ -19,6 +19,9 @@ trait CustomRejectionHandler {
         val names = methodRejections.map(_.supported.name)
         complete(MethodNotAllowed, s"Can't do that! Supported: ${names mkString " or "}!")
       }
-      .handleNotFound { complete((NotFound, "Not here!")) }
+      .handleNotFound {
+        val info = s"${NotFound.intValue}\nNot Found\nPlease check your request again!:)"
+        complete(HttpResponse(NotFound, entity = HttpEntity(ContentTypes.`application/json`, info)))
+      }
       .result()
 }

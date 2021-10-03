@@ -14,7 +14,7 @@ import spray.json.{DefaultJsonProtocol, RootJsonFormat, enrichAny}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.postfixOps
 
-trait CommentsJsonMapping extends DefaultJsonProtocol with CustomRejectionHandler{
+trait CommentsJsonMapping extends DefaultJsonProtocol with CustomRejectionHandler {
   implicit val commentsFormat: RootJsonFormat[Comment] = jsonFormat12(Comment.apply)
 
 }

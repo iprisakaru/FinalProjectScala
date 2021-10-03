@@ -20,7 +20,7 @@ trait DirectorsJsonMapping extends DefaultJsonProtocol {
 
 trait DirectorsApi extends DirectorsJsonMapping {
   val directorRoute: Route = {
-    (path(IntNumber) & get) { id => {
+    (pathPrefix(IntNumber) & get) { id => {
       LOGGER.debug(s"Getting films with $id id")
       complete(directorsService.getById(id).map(_.toJson))
     }
@@ -29,14 +29,14 @@ trait DirectorsApi extends DirectorsJsonMapping {
         LOGGER.debug("Getting all films")
         complete(directorsService.getAll().map(_.toJson))
       } ~
-      (path(IntNumber) & put) { id =>
+      (pathPrefix(IntNumber) & put) { id =>
         entity(as[Director]) { entity => {
           LOGGER.debug(s"Updating a new film with $id id")
           complete(directorsService.update(id, entity).map(_.toJson))
         }
         }
       } ~
-      (path(IntNumber) & delete) { id => {
+      (pathPrefix(IntNumber) & delete) { id => {
         LOGGER.debug(s"Deleting a film with $id id")
         complete(directorsService.deleteById(id).map(_.toJson))
       }

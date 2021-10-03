@@ -18,7 +18,7 @@ trait CountriesJsonMapping extends DefaultJsonProtocol {
 
 trait CountriesApi extends CountriesJsonMapping {
   val countriesRoute: Route = {
-    (path(IntNumber) & get) { id => {
+    (pathPrefix(IntNumber) & get) { id => {
       LOGGER.debug(s"Getting genre with $id id")
       complete(countriesService.getById(id).map(_.get.toJson))
     }
@@ -27,14 +27,14 @@ trait CountriesApi extends CountriesJsonMapping {
         LOGGER.debug("Getting all genres")
         complete(countriesService.getAll().map(_.toJson))
       } ~
-      (path(IntNumber) & put) { id =>
+      (pathPrefix(IntNumber) & put) { id =>
         entity(as[Country]) { entity => {
           LOGGER.debug(s"Updating a new genre with $id id")
           complete(countriesService.update(id, entity).map(_.toJson))
         }
         }
       } ~
-      (path(IntNumber) & delete) { id => {
+      (pathPrefix(IntNumber) & delete) { id => {
         LOGGER.debug(s"Deleting a genre with $id id")
         complete(countriesService.deleteById(id).map(_.toJson))
       }

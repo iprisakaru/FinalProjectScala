@@ -18,7 +18,7 @@ trait GenresJsonMapping extends DefaultJsonProtocol {
 
 trait GenresApi extends GenresJsonMapping {
   val genreRoute: Route = {
-    (path(IntNumber) & get) { id => {
+    (pathPrefix(IntNumber) & get) { id => {
       LOGGER.debug(s"Getting genre with $id id")
       complete(genresService.getById(id).map(_.get.toJson))
     }
@@ -27,14 +27,14 @@ trait GenresApi extends GenresJsonMapping {
         LOGGER.debug("Getting all genres")
         complete(genresService.getAll().map(_.toJson))
       } ~
-      (path(IntNumber) & put) { id =>
+      (pathPrefix(IntNumber) & put) { id =>
         entity(as[Genre]) { entity => {
           LOGGER.debug(s"Updating a new genre with $id id")
           complete(genresService.update(id, entity).map(_.toJson))
         }
         }
       } ~
-      (path(IntNumber) & delete) { id => {
+      (pathPrefix(IntNumber) & delete) { id => {
         LOGGER.debug(s"Deleting a genre with $id id")
         complete(genresService.deleteById(id).map(_.toJson))
       }

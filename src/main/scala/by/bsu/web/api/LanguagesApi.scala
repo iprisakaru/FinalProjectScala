@@ -19,7 +19,7 @@ trait LanguagesJsonMapping extends DefaultJsonProtocol {
 trait LanguagesApi extends LanguagesJsonMapping {
   val languagesRoute: Route = {
 
-    (path(IntNumber) & get) { id => {
+    (pathPrefix(IntNumber) & get) { id => {
 
       LOGGER.debug(s"Getting genre with $id id")
       complete(languagesService.getById(id).map(_.get.toJson))
@@ -29,14 +29,14 @@ trait LanguagesApi extends LanguagesJsonMapping {
       LOGGER.debug("Getting all genres")
       complete(languagesService.getAll().map(_.toJson))
 
-    } ~ (path(IntNumber) & put) { id =>
+    } ~ (pathPrefix(IntNumber) & put) { id =>
       entity(as[Language]) { entity => {
 
         LOGGER.debug(s"Updating a new genre with $id id")
         complete(languagesService.update(id, entity).map(_.toJson))
       }
       }
-    } ~ (path(IntNumber) & delete) { id => {
+    } ~ (pathPrefix(IntNumber) & delete) { id => {
 
       LOGGER.debug(s"Deleting a genre with $id id")
       complete(languagesService.deleteById(id).map(_.toJson))

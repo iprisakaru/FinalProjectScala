@@ -11,6 +11,7 @@ import scala.language.postfixOps
 trait Routes extends FilmsApi with AuthApi with GenresApi
   with DirectorsApi with ActorsApi with CommentsApi {
 
+
   val routes =
     Route.seal(
       pathPrefix("films") {
@@ -20,9 +21,8 @@ trait Routes extends FilmsApi with AuthApi with GenresApi
               LOGGER.debug(s"Trying to write a comment to film $filmId id")
               commentsRoute(filmId)
             }
-        }
+        } ~ generalFilmsRoute
       } ~
-        generalFilmsRoute ~
         myAuthenticateBasicAsync("none", myAuthenticator) {
           user =>
             pathPrefix("films") {
