@@ -1,9 +1,8 @@
 package by.bsu.web.api.auth
 
-import akka.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
-import akka.http.scaladsl.server.{AuthorizationFailedRejection, Directive1}
+import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import akka.http.scaladsl.server.Directives.{extractCredentials, onSuccess, provide, reject}
-import akka.http.scaladsl.server.directives.Credentials
+import akka.http.scaladsl.server.{AuthorizationFailedRejection, Directive1}
 import by.bsu.utils.RouteService
 
 import scala.concurrent.Future
@@ -22,7 +21,7 @@ object Auth2 {
   }
 
   def myAuthenticatorOAuth(accessToken: String): Future[Option[String]] = {
-    RouteService.authService.getIdNameByCode(accessToken)
+    RouteService.authService.authByToken(accessToken)
   }
 
 }

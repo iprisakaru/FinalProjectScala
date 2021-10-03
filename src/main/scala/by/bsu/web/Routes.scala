@@ -1,19 +1,15 @@
 package by.bsu.web
 
-import akka.http.scaladsl.model.StatusCodes.Unauthorized
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse}
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.{AuthorizationFailedRejection, RejectionHandler, Route}
+import akka.http.scaladsl.server.Route
 import by.bsu.Application.LOGGER
 import by.bsu.web.api._
-import by.bsu.web.api.auth.Auth2.{myAuthenticateOAuthAsync, myAuthenticatorOAuth}
 import by.bsu.web.api.auth.HTTPBasicAuth.{myAuthenticateBasicAsync, myAuthenticator}
 
 import scala.language.postfixOps
 
 trait Routes extends FilmsApi with AuthApi with GenresApi
   with DirectorsApi with ActorsApi with CommentsApi {
-
 
   val routes =
     Route.seal(
@@ -26,6 +22,7 @@ trait Routes extends FilmsApi with AuthApi with GenresApi
             }
         }
       } ~
+        generalFilmsRoute ~
         myAuthenticateBasicAsync("none", myAuthenticator) {
           user =>
             pathPrefix("films") {
@@ -39,8 +36,7 @@ trait Routes extends FilmsApi with AuthApi with GenresApi
             } ~ pathPrefix("job") {
               periodicRequest
             }
-        } ~
-        generalFilmsRoute
+        }
     )
 
 

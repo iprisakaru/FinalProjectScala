@@ -1,12 +1,16 @@
 package by.bsu.utils
 
-import by.bsu.model.dao.GithubUsersDAO
-import by.bsu.model.repository.GithubUser
+import by.bsu.model.dao.UsersDAO
+import by.bsu.model.repository.User
 
-class GithubUserService(githubUsersDAO: GithubUsersDAO) {
+class GithubUserService(githubUsersDAO: UsersDAO) {
 
-  def checkByNode(githubUser: GithubUser) ={
-    githubUsersDAO.insert(githubUser)
+  def checkGithubUserByNode(githubUser: User) ={
+    githubUsersDAO.insertGithub(githubUser)
+  }
+
+  def checkGoogleUserById(user: User) = {
+    githubUsersDAO.insertGoogle(user)
   }
 
 }

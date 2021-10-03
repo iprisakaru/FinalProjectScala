@@ -10,7 +10,7 @@ trait AuthApi {
   val authApi: Route = {
     get {
       parameter("code") { code =>
-        complete(authService.getToken(code))
+        complete(authService.getGHToken(code))
       }
     }
 
