@@ -19,16 +19,16 @@ class UsersDAO(val config: DatabaseConfig[JdbcProfile])
 
 
   def insertGithub(user: User): Future[Option[User]] = {
-    LOGGER.debug(s"Inserting user ${user.ghLogin}")
+    LOGGER.debug(s"Inserting user ${user.githubLogin}")
     val result = db.run(((users returning users) += user).asTry).map(_.toOption)
     result.map(data => {
       if (data.nonEmpty) Future(data)
-      else findByGhId(user.ghNodeId.get)
+      else findByGhId(user.githubNodeId.get)
     }).flatten
   }
 
   def insertGoogle(user: User): Future[Option[User]] = {
-    LOGGER.debug(s"Inserting user ${user.ghLogin}")
+    LOGGER.debug(s"Inserting user ${user.githubLogin}")
     val result = db.run(((users returning users) += user).asTry).map(_.toOption)
     result.map(data => {
       if (data.nonEmpty) Future(data)
@@ -40,7 +40,7 @@ class UsersDAO(val config: DatabaseConfig[JdbcProfile])
   def updateGithub(id: Int, user: User): Future[Int] = {
     LOGGER.debug(s"Updating user $id id")
     db.run(users.filter(_.userId === id).map(customer => (customer.login))
-      .update(user.ghLogin))
+      .update(user.githubLogin))
   }
 
   def findAll(): Future[Seq[User]] = db.run(users.result)
@@ -57,11 +57,11 @@ class UsersDAO(val config: DatabaseConfig[JdbcProfile])
   }
 
   def findByGhId(id: String): Future[Option[User]] = {
-    db.run(users.filter(_.ghNodeId === id).result.headOption)
+    db.run(users.filter(_.githubNodeId === id).result.headOption)
   }
 
   def findByGglId(id: String): Future[Option[User]] = {
-    db.run(users.filter(_.gglId === id).result.headOption)
+    db.run(users.filter(_.githubId === id).result.headOption)
   }
 
   def deleteAll(): Future[Int] = {

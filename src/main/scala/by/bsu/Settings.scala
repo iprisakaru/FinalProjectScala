@@ -10,5 +10,11 @@ case class Settings(config: Config) {
   val httpPort: Int = httpConfig.getInt("port")
   val httpApiMovieDb: String = httpConfig.getString("httpApiMovieDb")
   val httpMovieUpdateApi: String = httpConfig.getString("httpMovieUpdateApi")
+
+  val githubClientId: String = config.getString("apis.github.clientId")
+  val githubClientSecret: String = config.getString("apis.github.clientSecret")
+  val githubUri: String = config.getString("apis.github.uri")
+  val githubTokenUri: String = config.getString("apis.github.tokenUri")
+  val googleUri: String = config.getString("apis.google.uri")
   LOGGER.info("Configuration file was read successfully.")
 }

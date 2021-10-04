@@ -4,7 +4,9 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest}
+import by.bsu.Settings
 import by.bsu.model.repository.User
+import com.typesafe.config.ConfigFactory
 import org.apache.hc.core5.net.URLEncodedUtils
 import spray.json.{DefaultJsonProtocol, NullOptions, RootJsonFormat, _}
 
@@ -30,19 +32,19 @@ class AuthService extends GithubAccessJson {
 
   protected implicit val executor: ExecutionContext = system.dispatcher
 
+  val configData: Settings = Settings(ConfigFactory.load)
 
   def getGHToken(code: String): Future[Option[String]] = {
-
+    val headOfList = 0
     val accessTokenFieldName = "access_token"
-
     val request = HttpRequest(method = HttpMethods.POST,
-      uri = s"https://github.com/login/oauth/access_token?client_id=5c481d41c1df3a0cc298&client_secret=c674651120f1a7e4431ecca404f273552e3c18cd&code=$code")
-    val responseFut = Http(system).singleRequest(request)
-    val tokenFut = responseFut.map(_.entity.toStrict(5 seconds)).flatMap(data => data.map(_.data.utf8String))
-    val uriFut = tokenFut.map(data => s"?$data")
-    val params = uriFut.map(data => URLEncodedUtils.parse(new URI(data), Charset.forName("UTF-8")))
+      uri = s"${configData.githubTokenUri}?client_id=${configData.githubClientId}&client_secret=${configData.githubClientSecret}&code=$code")
+    val response = Http(system).singleRequest(request)
+    val tokenInfo = response.map(_.entity.toStrict(5 seconds)).flatMap(data => data.map(_.data.utf8String))
+    val uriResponse = tokenInfo.map(data => s"?$data")
+    val params = uriResponse.map(data => URLEncodedUtils.parse(new URI(data), Charset.forName("UTF-8")))
 
-    val accessToken = params.map(_.get(0)).map(data => {
+    val accessToken = params.map(_.get(headOfList)).map(data => {
       if (data.getName == accessTokenFieldName) Option(data.getValue)
       else None
     })
@@ -52,9 +54,9 @@ class AuthService extends GithubAccessJson {
 
   def getGitHubIdNameByToken(accessToken: String): Future[Option[String]] = {
     val headerAuth = RawHeader("Authorization", s"Bearer $accessToken")
-    val request = HttpRequest(HttpMethods.GET, uri = "https://api.github.com/user").addHeader(headerAuth)
-    val responseFut = Http(system).singleRequest(request)
-    val entityRequest = responseFut.map(_._3.toStrict(5.seconds)).flatMap(_.map(_.data.utf8String))
+    val request = HttpRequest(HttpMethods.GET, uri = configData.githubUri).addHeader(headerAuth)
+    val response = Http(system).singleRequest(request)
+    val entityRequest = response.map(_._3.toStrict(5.seconds)).flatMap(_.map(_.data.utf8String))
     val entitiesByRows = entityRequest.map(_.split("\n").toList)
 
     val githubInfo = entitiesByRows.map(_.map(_.parseJson)).map(_.map(_.convertTo[GithubAccessToken])).map(_.head)
@@ -71,7 +73,7 @@ class AuthService extends GithubAccessJson {
 
   def getGoogleIdEmailByToken(accessToken: String): Future[Option[String]] = {
     val headerAuth = RawHeader("Authorization", s"Bearer $accessToken")
-    val request = HttpRequest(HttpMethods.GET, uri = "https://www.googleapis.com/oauth2/v2/userinfo").addHeader(headerAuth)
+    val request = HttpRequest(HttpMethods.GET, uri = configData.googleUri).addHeader(headerAuth)
     val responseFut = Http(system).singleRequest(request)
     val entityRequest = responseFut.map(_._3.toStrict(5.seconds)).flatMap(_.map(_.data.utf8String))
     val entitiesByRows = entityRequest
