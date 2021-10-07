@@ -7,7 +7,7 @@ import by.bsu.utils.RouteService
 
 import scala.concurrent.Future
 
-object Auth2 {
+object OAuth2 {
 
   def myAuthenticateOAuthAsync[T](realm: String,
                                   authenticate: (String) => Future[Option[T]]): Directive1[T] = {

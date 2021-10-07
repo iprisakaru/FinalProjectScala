@@ -1,13 +1,11 @@
 package by.bsu.web.api
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse}
-import akka.http.scaladsl.model.StatusCodes.{InternalServerError, MethodNotAllowed, NotFound, Unauthorized}
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.{AuthorizationFailedRejection, MethodRejection, RejectionHandler, Route, ValidationRejection}
-import by.bsu.model.repository.Comment
+import akka.http.scaladsl.server.Route
+import by.bsu.model.repository.{Comment, CommentEntrance}
 import by.bsu.utils.RouteService
-import by.bsu.web.api.auth.Auth2.{myAuthenticateOAuthAsync, myAuthenticatorOAuth}
+import by.bsu.web.api.auth.OAuth2.{myAuthenticateOAuthAsync, myAuthenticatorOAuth}
 import by.bsu.web.api.rejections.CustomRejectionHandler
 import spray.json.{DefaultJsonProtocol, RootJsonFormat, enrichAny}
 
@@ -16,6 +14,7 @@ import scala.language.postfixOps
 
 trait CommentsJsonMapping extends DefaultJsonProtocol with CustomRejectionHandler {
   implicit val commentsFormat: RootJsonFormat[Comment] = jsonFormat12(Comment.apply)
+  implicit val commentsEntranceFormat: RootJsonFormat[CommentEntrance] = jsonFormat9(CommentEntrance.apply)
 
 }
 
@@ -28,9 +27,9 @@ trait CommentsApi extends CommentsJsonMapping {
       myAuthenticateOAuthAsync("none", myAuthenticatorOAuth) {
         id =>
           post {
-            entity(as[Comment]) {
+            entity(as[CommentEntrance]) {
               entity =>
-                complete(RouteService.commentsService.create(entity.copy(userId = id.toInt, filmId = filmId)).map(_.toJson))
+                complete(RouteService.commentsService.create(Comment(None, entity.header,entity.description,entity.rating,entity.recommended, id.toInt, filmId, entity.recommendedFilm1, entity.recommendedFilm2, entity.recommendedFilm3, entity.recommendedFilm4, entity.recommendedFilm5 )))
             }
           }
       }

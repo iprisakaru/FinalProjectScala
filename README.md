@@ -21,12 +21,12 @@ As part of this project, it is necessary to develop a backend for the service of
 
 ### CRUD for films and other entities
 ```
-curl --location --request GET '127.0.0.1:8000/films/'
+curl --location --request GET '127.0.1.1:8000/films/'
 ```
 
 ### Create film using name and release year via another API
 ```
-curl --location --request POST '127.0.0.1:8000/help-create/' \
+curl --location --request POST '127.0.1.1:8000/help-create/' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "name": "Godzilla",
@@ -35,5 +35,56 @@ curl --location --request POST '127.0.0.1:8000/help-create/' \
 ```
 ### Update list of genres via another API
 ```
-127.0.0.1:8000/update-genres
+127.0.1.1:8000/update-genres
+```
+
+### Getting public films with pagination
+```
+curl --location --request GET '127.0.1.1:8000/films/public/?offset=1&limit=4'
+```
+### Getting films via Movie API
+```
+curl --location --request GET '127.0.1.1:8000/films/help' \
+--header 'Authorization: Basic xxxxxxxxxxxxxxx' \
+--header 'Content-Type: application/json' \
+--data-raw '    {
+        "name": "Goodfellas",
+        "releaseDate": "1990"
+    }'
+```
+### Making film public
+```
+curl --location --request PUT '127.0.1.1:8000/films/public/210198' \
+--header 'Authorization: Basic xxxxxxxxxxxxx'
+```
+### Upload csv files
+```
+curl --location --request POST '127.0.1.1:8000/films/files' \
+--header 'Authorization: Basic xxxxxxxxxxx' \
+--form 'csv=@"/C:/Users/Asus/Desktop/test03.csv"'
+```
+### Getting comments of film
+```
+curl --location --request GET '127.0.1.1:8000/films/210177/comments'
+```
+### Create comment
+```
+curl --location --request POST '127.0.1.1:8000/films/filmId/comments/' \
+--header 'Authorization: Bearer access_token' \
+--header 'Content-Type: application/json' \
+--data-raw '   {
+        "description": "descr",
+        "header": "header",
+        "rating": 5,
+        "recommended": false
+    }'
+```
+### Getting films by params
+```
+curl --location --request GET '127.0.1.1:8000/films?directorName=Martin&name=Good&releaseDate=1990' \
+--header 'Authorization: Basic xxxxxxxxxxxx'
+```
+### Get recommended film
+```
+curl --location --request GET '127.0.1.1:8000/films/210188/recommended'
 ```

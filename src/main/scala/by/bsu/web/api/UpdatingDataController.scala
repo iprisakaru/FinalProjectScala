@@ -5,6 +5,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.coding.Gzip
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest}
 import by.bsu.Application.configData
+import by.bsu.utils.HelpFunctions
 import by.bsu.utils.HelpFunctions.isEnglish
 import org.apache.log4j.Logger
 import spray.json.{DefaultJsonProtocol, NullOptions, RootJsonFormat, _}
@@ -13,12 +14,14 @@ import java.time.{ZoneId, ZonedDateTime}
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
+import scala.util.Try
 
 trait DataJsonMapping extends DefaultJsonProtocol with NullOptions {
   implicit val fromApiEverydayJsonFormat: RootJsonFormat[DataFromAPIEveryday] = jsonFormat3(DataFromAPIEveryday.apply)
   implicit val genresFromApiEverydayJsonFormat: RootJsonFormat[GenreFromApi] = jsonFormat2(GenreFromApi.apply)
   implicit val genresApiJsonFormat: RootJsonFormat[GenresFromApi] = jsonFormat1(GenresFromApi.apply)
   implicit val filmsApiJsonFormat: RootJsonFormat[FilmFromApi] = jsonFormat14(FilmFromApi.apply)
+  implicit val filmsApiOptionJsonFormat: RootJsonFormat[FilmFromApiOption] = jsonFormat14(FilmFromApiOption.apply)
 
 }
 
@@ -32,6 +35,11 @@ case class FilmFromApi(Title: String, Year: String, Rated: String, Released: Str
                        Genre: String, Director: String, Writer: String, Actors: String,
                        Plot: String, Language: String, Country: String, Awards: String,
                        Poster: String)
+
+case class FilmFromApiOption(Title: Option[String], Year: Option[String], Rated: Option[String], Released: Option[String], Runtime: Option[String],
+                             Genre: Option[String], Director: Option[String], Writer: Option[String], Actors: Option[String],
+                             Plot: Option[String], Language: Option[String], Country: Option[String], Awards: Option[String],
+                             Poster: Option[String])
 
 class UpdatingDataController extends DataJsonMapping {
 
@@ -97,8 +105,14 @@ class UpdatingDataController extends DataJsonMapping {
     val responseFut = Http(system).singleRequest(request)
     val entityRequest = responseFut.map(_._3.toStrict(5.seconds)).flatMap(data => data.map(_.data.utf8String))
     val entitiesByRows = entityRequest.map(_.split("\n").toSeq)
-    val listOfData = entitiesByRows.map(_.map(line => line.parseJson)).map(_.map(_.convertTo[FilmFromApi]))
+    val listOfData = entitiesByRows.map(_.map(line => line.parseJson)).map(_.map(_.convertTo[FilmFromApiOption]).map(data => {
+      if (data.Title.nonEmpty) Option(FilmFromApi(data.Title.get, data.Year.get, data.Rated.get,
+        data.Released.get, data.Runtime.get, data.Genre.get, data.Director.get, data.Writer.get,
+        data.Actors.get, data.Plot.get, data.Language.get.split(",").head,
+        data.Country.get, data.Awards.get, data.Poster.get))
+      else Option.empty
+    }))
 
-    listOfData
+    HelpFunctions.fOption(Try(listOfData.map(_.filter(_.nonEmpty).map(_.get))).toOption).map(_.getOrElse(Seq.empty[FilmFromApi]))
   }
 }

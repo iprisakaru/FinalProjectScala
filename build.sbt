@@ -11,6 +11,10 @@ flywayUser := "postgres"
 flywayPassword := "qwerty123"
 flywayLocations += "db/migration"
 flywayBaselineOnMigrate := true
+mainClass in Compile := Some("by/bsu/Application")
+
+enablePlugins(JavaAppPackaging)
+enablePlugins(DockerPlugin)
 
 libraryDependencies ++= Seq(
   "org.apache.httpcomponents.client5" % "httpclient5" % "5.1",

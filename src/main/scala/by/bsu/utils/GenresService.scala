@@ -52,4 +52,8 @@ class GenresService(genresDao: GenresDAO) {
     result
   }
 
+  def getTopFilmsFromGenre(id: Int) = {
+    genresDao.getTopFilmsByGenre(id)
+  }
+
 }

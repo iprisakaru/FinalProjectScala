@@ -39,7 +39,4 @@ object HTTPBasicAuth  {
     })
   }
 
-  case class ErrorResponse(code: Int, `type`: String, message: String)
-
-
 }

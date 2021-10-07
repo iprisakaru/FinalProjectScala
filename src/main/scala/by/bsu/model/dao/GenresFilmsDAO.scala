@@ -6,7 +6,8 @@ import org.apache.log4j.Logger
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
 
 class GenresFilmsDAO(val config: DatabaseConfig[JdbcProfile])
@@ -39,8 +40,11 @@ class GenresFilmsDAO(val config: DatabaseConfig[JdbcProfile])
     genresFilms.filter(e => e.film_id === id).delete
   }
 
-  def findByName(genreId: Int, filmId: Int): Future[Option[Int]] = {
-    db.run(genresFilms.filter(data => (data.genre_id === genreId && data.film_id === filmId)).result.headOption.map(_.get.genreFilmId))
+  def findByFilm(filmId: Int) = {
+   val p = db.run(genresFilms.filter(data => (data.film_id === filmId)).result.headOption.map(_.get.genreId).asTry).map(_.toOption)
+
+  Await.result(p, 777 seconds)
+  p
   }
 
   def joinGenresToFilmsId() = {

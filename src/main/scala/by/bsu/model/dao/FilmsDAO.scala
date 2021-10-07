@@ -5,12 +5,11 @@ import org.apache.log4j.Logger
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 import scala.language.postfixOps
 
 class FilmsDAO(override val config: DatabaseConfig[JdbcProfile])
-  extends BaseDAO with FilmsTable {
+  extends BaseDAO with FilmsTable with CommentsTable {
 
   import config.driver.api._
 
@@ -41,6 +40,11 @@ class FilmsDAO(override val config: DatabaseConfig[JdbcProfile])
 
   def findAll(isPublic: Boolean) = db.run(films.filter(_.public === isPublic)
     .joinLeft(languages).on(_.languageId === _.language_id).result)
+
+  def findAllPagination(limit: Int, offset: Int, isPublic: Boolean) = {
+    db.run(films.filter(_.public === isPublic)
+      .joinLeft(languages).on(_.languageId === _.language_id).take(limit).drop(offset).result)
+  }
 
   def findAll() = {
     db.run(films.result)
@@ -93,6 +97,23 @@ class FilmsDAO(override val config: DatabaseConfig[JdbcProfile])
   def deleteAll(): Future[Int] = {
     db.run(films.delete)
   }
+
+  def getRecommendedFilms(id: Int) = {
+    val minNumOfPoints: Byte = 5
+    val action = comments.filter(_.rating >= minNumOfPoints).filter(comment => (comment.recommendedFilm1 === id
+      || comment.recommendedFilm2 === id || comment.recommendedFilm3 === id
+      || comment.recommendedFilm4 === id || comment.recommendedFilm5 === id))
+      .result
+
+    val result2 = db.run(action)
+
+    val result = db.run(action).map(_.map(data => {
+      List(Option(data.filmId), data.recommendedFilm1, data.recommendedFilm2, data.recommendedFilm3, data.recommendedFilm4, data.recommendedFilm5)
+    })).map(_.flatMap(_.filter(_.nonEmpty))).map(_.map(_.get))
+
+    result.map(_.distinct).zip(result).map(num => num._1.map(info => (info -> num._2.count(_ == info)))).map(_.sortBy(_._2).reverse)
+  }
+
 
   override def insertList(entities: Seq[Film]): Future[Seq[Option[Film]]] = ???
 }

@@ -1,8 +1,5 @@
 package by.bsu.utils
 
-import akka.http.scaladsl.server.RequestContext
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
 import by.bsu.model.dao._
 import by.bsu.model.repository._
 import by.bsu.utils.RouteService._
@@ -10,7 +7,8 @@ import by.bsu.web.api.UpdatingDataController
 import org.apache.log4j.Logger
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Future}
 import scala.language.postfixOps
 import scala.util.Try
 
@@ -30,6 +28,16 @@ class FilmsService(filmsDAO: FilmsDAO) {
     filmsDAO.findAll(true).flatMap(getFullFilm)
   }
 
+  def getAllPublicPagination(limit: Int, offset: Int) = {
+    LOGGER.trace(s"Getting all public films with pagination (limit: $limit, offset: $offset)")
+    filmsDAO.findAllPagination(limit, offset, true).flatMap(getFullFilm)
+  }
+
+  def getAllPrivatePagination(limit: Int, offset: Int) = {
+    LOGGER.trace(s"Getting all private films with pagination (limit: $limit, offset: $offset)")
+    filmsDAO.findAllPagination(limit, offset, false).flatMap(getFullFilm)
+  }
+
   def getAllPrivate = {
     LOGGER.trace(s"Getting all private films")
     filmsDAO.findAll(false).flatMap(getFullFilm)
@@ -40,9 +48,9 @@ class FilmsService(filmsDAO: FilmsDAO) {
     filmsDAO.findAll()
   }
 
-  def getById(id: Int): Future[Film] = {
+  def getById(id: Int) = {
     LOGGER.trace(s"Getting film with $id id")
-    filmsDAO.findById(id).map(_.get)
+    filmsDAO.findById(id).map(_.map(Seq(_))).map(_.getOrElse(Seq.empty))
   }
 
   def getAllFullFilms: Future[Seq[NewFilmWithFieldsId]] = {
@@ -84,14 +92,14 @@ class FilmsService(filmsDAO: FilmsDAO) {
     films.flatMap(getFullFilm)
   }
 
-  def getFullFilmsByDirector(directorName: String) = {
+  def getFullFilmsByDirector(directorName: String): Future[Option[Seq[Seq[NewFilmWithFieldsId]]]] = {
     val director = directorsService.getByName(directorName)
     val filmIds = director.flatMap(info => HelpFunctions.fOption(info.map(data => directorsFilmsService.getByDirectorId(data.id.get).map(_.map(_.filmId)))))
     val films = filmIds.flatMap(data => HelpFunctions.fOption(data.map(info => Future.sequence(info.map(data => filmsDAO.findAllById(data))))))
     films.flatMap(info => HelpFunctions.fOption(info.map(data => Future.sequence(data.map(getFullFilm)))))
   }
 
-  def getFullByDirectorNameDate(directorName: String, filmName: String, releaseDate: String) = {
+  def getFullByDirectorNameDate(directorName: String, filmName: String, releaseDate: String): Future[Seq[NewFilmWithFieldsId]] = {
     val directors = getFullFilmsByDirector(directorName).map(_.map(_.flatten))
 
     val films = filmsDAO.findAllByNameDate(filmName, releaseDate).map(getFullFilm).flatten
@@ -101,7 +109,7 @@ class FilmsService(filmsDAO: FilmsDAO) {
       filmsFut <- films
     } yield (dirFut.map(_.intersect(filmsFut)))
 
-    results.map(data => data.filter(_.nonEmpty).get)
+    results.map(data => data.filter(_.nonEmpty).getOrElse(Seq.empty[NewFilmWithFieldsId]))
   }
 
   def getFullByDirectorName(directorName: String, filmName: String) = {
@@ -114,7 +122,7 @@ class FilmsService(filmsDAO: FilmsDAO) {
       filmsFut <- films
     } yield (dirFut.map(_.intersect(filmsFut)))
 
-    results.map(data => data.filter(_.nonEmpty).get)
+    results.map(data => data.filter(_.nonEmpty).getOrElse(Seq.empty[NewFilmWithFieldsId]))
   }
 
   def getFullByDirectorDate(directorName: String, date: String) = {
@@ -127,7 +135,7 @@ class FilmsService(filmsDAO: FilmsDAO) {
       filmsFut <- films
     } yield (dirFut.map(_.intersect(filmsFut)))
 
-    results.map(data => data.filter(_.nonEmpty).get)
+    results.map(data => data.filter(_.nonEmpty).getOrElse(Seq.empty[NewFilmWithFieldsId]))
   }
 
   def getFullByNameDate(filmName: String, releaseDate: String): Future[Seq[NewFilmWithFieldsId]] = {
@@ -194,6 +202,7 @@ class FilmsService(filmsDAO: FilmsDAO) {
 
     } yield (insertionFut.copy(id = resultFut.id, name = resultFut.name, ageLimit = resultFut.ageLimit, shortDescription = resultFut.shortDescription,
       timing = resultFut.timing, releaseDate = resultFut.releaseDate, image = resultFut.image))
+
   }
 
   private def insertLinkedTables(id: Option[Int], film: NewFilmWithId): Future[List[Option[Seq[Int]]]] = {
@@ -226,12 +235,11 @@ class FilmsService(filmsDAO: FilmsDAO) {
     } yield (filmsDeleted))
   }
 
-  def createFilmWithFilling(newFilm: NewFilmWithFields): Future[NewFilmWithId] = {
+  def createFilmWithFilling(newFilm: NewFilmWithFields) = {
     LOGGER.debug(s"Creating film without filling fields of ${newFilm.name} of ${newFilm.releaseDate}")
-    val filmData = getFilmByNameAndYear(newFilm.name, newFilm.releaseDate.toInt)
-    LOGGER.trace("Checking fields for None")
-    val result = replaceEmptyFilm(newFilm, filmData)
-    result.flatMap(insertFilmWithFields)
+
+    val result = HelpFunctions.fOption(Try(getFilmByNameAndYear(newFilm.name, newFilm.releaseDate.toInt)).toOption)
+    result.map(_.getOrElse(Seq.empty[NewFilmWithFields]))
   }
 
   def replaceEmptyFilm(newFilm: NewFilmWithFields, filmData: Future[NewFilmWithFields]): Future[NewFilmWithFields] = {
@@ -265,7 +273,7 @@ class FilmsService(filmsDAO: FilmsDAO) {
       newFilm.releaseDate, awardsFilledFut, languageFilledFut, Option(false)))
   }
 
-  def getFilmByNameAndYear(filmName: String, year: Int): Future[NewFilmWithFields] = {
+  def getFilmByNameAndYear(filmName: String, year: Int) = {
 
     LOGGER.trace(s"Trying to more info about film $filmName - $year")
     val data = updateDataController.getAdditionalDataFromApi(filmName, year)
@@ -273,7 +281,7 @@ class FilmsService(filmsDAO: FilmsDAO) {
       Option(film.Actors.split(",").toSeq.map(_.trim)), Option(film.Genre.split(",").toSeq.map(_.trim)), Option(film.Country.split(",").toSeq.map(_.trim)), Option(film.Director.split(",").toSeq.map(_.trim)),
       Option(film.Plot), Option(film.Runtime), Option(film.Poster), film.Released, Option(film.Awards), Option(film.Language), Option(false))))
 
-    (result.map(_.head))
+    (result)
   }
 
   def updateFilmsPerDay(): Future[List[NewFilmWithId]] = {
@@ -281,8 +289,6 @@ class FilmsService(filmsDAO: FilmsDAO) {
     val data = updateDataController.periodicUpdateData()
     data._1.map(_.map(name => NewFilmWithId(None, name, None, None, None, None, None, None, None, None, data._2, None, None, Option(false))))
   }
-
-
 
 
   def insertFilmWithFields(film: NewFilmWithFields): Future[NewFilmWithId] = {
@@ -306,5 +312,22 @@ class FilmsService(filmsDAO: FilmsDAO) {
 
 
     creationOfFilms.flatten
+  }
+
+
+  def getRecommend(id: Int) = {
+    val topInGenresId = HelpFunctions.fOption(Try(genresFilmsService.getByName(id).map(data => HelpFunctions.fOption(data.map(genresService.getTopFilmsFromGenre)))
+      .flatten.map(_.get).map(_.map(data => (data._1.get)))).toOption)
+    val listOfFilms = filmsDAO.getRecommendedFilms(id).map(_.map(_._1))
+
+    val recommendedIds = for {
+      topInGenresIdFuture <- topInGenresId
+      listOfFilmsFuture <- listOfFilms
+    } yield (if (topInGenresIdFuture.nonEmpty) {
+      topInGenresIdFuture.get ++ listOfFilmsFuture
+    } else listOfFilmsFuture)
+
+    val result = recommendedIds.map(_.distinct.filter(_ != id)).map(_.map(getById)).map(Future.sequence(_)).flatten
+    result.map(_.take(5))
   }
 }

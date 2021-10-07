@@ -7,6 +7,11 @@ case class Comment(commentId: Option[Int], header: String, description: String, 
                    recommendedFilm2: Option[Int], recommendedFilm3: Option[Int],
                    recommendedFilm4: Option[Int], recommendedFilm5: Option[Int])
 
+case class CommentEntrance(header: String, description: String, rating: Byte,
+                           recommended: Boolean, recommendedFilm1: Option[Int],
+                           recommendedFilm2: Option[Int], recommendedFilm3: Option[Int],
+                           recommendedFilm4: Option[Int], recommendedFilm5: Option[Int])
+
 trait CommentsTable extends FilmsTable with UsersTable {
   this: Db =>
 

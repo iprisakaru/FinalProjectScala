@@ -1,14 +1,11 @@
 package by.bsu.model.dao
 
-import by.bsu.model.Db
 import by.bsu.model.repository.{Director, DirectorsTable}
-import by.bsu.utils.HelpFunctions
 import org.apache.log4j.Logger
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Future
-import scala.util.Try
 
 class DirectorsDAO(val config: DatabaseConfig[JdbcProfile])
   extends BaseDAO with DirectorsTable {

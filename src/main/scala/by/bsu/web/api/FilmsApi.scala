@@ -17,10 +17,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.postfixOps
 
 trait FilmJsonMapping extends DefaultJsonProtocol {
+  case class Empty(message: Option[String])
+
   implicit val film1Format: RootJsonFormat[NewFilmWithId] = jsonFormat14(NewFilmWithId.apply)
   implicit val film2Format: RootJsonFormat[Film] = jsonFormat10(Film.apply)
   implicit val film3Format: RootJsonFormat[NewFilmWithFields] = jsonFormat14(NewFilmWithFields.apply)
   implicit val film4Format: RootJsonFormat[NewFilmWithFieldsId] = jsonFormat14(NewFilmWithFieldsId.apply)
+  implicit val filmFormat: RootJsonFormat[Empty] = jsonFormat1(Empty.apply)
+
 }
 
 trait FilmsApi extends FilmJsonMapping with CommentsApi with CustomRejectionHandler {
@@ -33,12 +37,21 @@ trait FilmsApi extends FilmJsonMapping with CommentsApi with CustomRejectionHand
       }
     } ~
       get {
-        pathPrefix("file-example") {
-          complete(HttpEntity(ContentTypes.`text/csv(UTF-8)`, FileIO.fromPath(Paths.get("src/main/resources/films-file-example.csv"))))
+        pathPrefix("help") {
+          entity(as[NewFilmWithFields]) { customer => {
+            complete(filmsService.createFilmWithFilling(customer).map(_.toJson))
+          }
+          }
         } ~
           pathPrefix("private") {
-            LOGGER.debug("Getting all private films")
-            complete(filmsService.getAllPrivate)
+            parameter("limit", "offset") {
+              (limit, offset) =>
+                LOGGER.debug("Getting all private films")
+                complete(filmsService.getAllPrivatePagination(limit.toInt, offset.toInt).map(_.toJson))
+            }
+          } ~
+          pathPrefix("file-example") {
+            complete(HttpEntity(ContentTypes.`text/csv(UTF-8)`, FileIO.fromPath(Paths.get("src/main/resources/films-file-example.csv"))))
           } ~
           (pathPrefix(IntNumber)) { id => {
             LOGGER.debug(s"Getting films with $id id")
@@ -66,9 +79,6 @@ trait FilmsApi extends FilmJsonMapping with CommentsApi with CustomRejectionHand
                 complete(filmsParserService.parseCSVtoFilm(byteSource, ctx))
 
             }
-          } ~
-          pathPrefix("help") {
-            filmHelpRoute
           }
       } ~
       put {
@@ -78,12 +88,11 @@ trait FilmsApi extends FilmJsonMapping with CommentsApi with CustomRejectionHand
             complete(filmsService.makePublic(id).map(_.toJson))
         }
       }
-
   }
 
   val filmHelpRoute: Route = {
 
-    post {
+    get {
       entity(as[NewFilmWithFields]) { customer => {
         complete(filmsService.createFilmWithFilling(customer).map(_.toJson))
       }
@@ -97,7 +106,7 @@ trait FilmsApi extends FilmJsonMapping with CommentsApi with CustomRejectionHand
       pathPrefix("directors") {
         parameter("name") {
           name =>
-            complete(filmsService.getFullFilmsByDirector(name).map(_.toJson))
+            complete(filmsService.getFullFilmsByDirector(name).map(_.getOrElse(Seq(Seq.empty[NewFilmWithFieldsId]))).map(_.toJson))
         }
       } ~
         parameter("name", "releaseDate", "directorName") { (name, date, directorName) =>
@@ -120,7 +129,10 @@ trait FilmsApi extends FilmJsonMapping with CommentsApi with CustomRejectionHand
           LOGGER.debug(s"Getting film by name $name")
           complete(filmsService.getFullByName(name).map(_.toJson))
       } ~ pathPrefix("public") {
-        complete(filmsService.getAllPublic.map(_.toJson))
+        parameter("limit", "offset") {
+          (limit, offset) =>
+            complete(filmsService.getAllPublicPagination(limit.toInt, offset.toInt).map(_.toJson))
+        }
       }
     }
   }

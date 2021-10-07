@@ -1,6 +1,5 @@
 package by.bsu.model.dao
 
-import by.bsu.model.Db
 import by.bsu.model.repository.{Admin, AdminsTable}
 import org.apache.log4j.Logger
 import slick.basic.DatabaseConfig
