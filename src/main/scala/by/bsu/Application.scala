@@ -25,7 +25,7 @@ object Application extends App with DbConfiguration with Db with Routes {
   LOGGER.info("Program is running.")
   //starting web api
   LOGGER.info("Web app is running")
-
+  LOGGER.info("Configs were loaded")
   val bindingFuture = Http()
     .bindAndHandle(handler = logRequestResult("log")(routes)
       , interface = configData.httpInterface, port = configData.httpPort)
