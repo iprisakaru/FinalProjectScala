@@ -11,7 +11,7 @@ flywayUser := "postgres"
 flywayPassword := "qwerty123"
 flywayLocations += "db/migration"
 flywayBaselineOnMigrate := true
-mainClass in Compile := Some("by/bsu/Application")
+mainClass in Compile := Some("by.bsu.Application")
 
 enablePlugins(JavaAppPackaging)
 enablePlugins(DockerPlugin)
